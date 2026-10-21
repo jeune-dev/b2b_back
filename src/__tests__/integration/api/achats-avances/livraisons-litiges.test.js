@@ -72,6 +72,8 @@ describe('Livraisons partielles', () => {
     }
     const liste = await api().get(`/api/v1/achats/${commande.id}/livraisons`).set(rc.acheteur.h);
     expect(liste.body.data.deliveries).toHaveLength(2);
+    const vueFournisseur = await api().get(`/api/v1/ventes/${commande.id}/livraisons`).set(rc.fournisseur.h);
+    expect(vueFournisseur.body.data.deliveries.map((d) => d.status)).toEqual(['receptionnee', 'receptionnee']);
   });
 
   test('reliquat soldé par l’acheteur : rien de plus à livrer ni à facturer ; bon de livraison signé joint', async () => {
@@ -135,6 +137,8 @@ describe('Retours et litiges', () => {
     const pdf = await api().get(`/api/v1/avoirs/${avoirId}/pdf`).set(rc.acheteur.h).buffer(true).parse(binaire);
     expect(pdf.body.subarray(0, 5).toString()).toBe('%PDF-');
     expect((await api().get('/api/v1/avoirs?sens=recus').set(rc.acheteur.h)).body.data.items).toHaveLength(1);
+    const avoir = (await api().get(`/api/v1/avoirs/${avoirId}`).set(rc.acheteur.h)).body.data.credit_note;
+    expect(avoir).toMatchObject({ direction: 'recu', unallocated_amount: 0, allocations: [expect.objectContaining({ amount: 35400 })] });
 
     // Au plus le reçu non encore contesté : 10 reçus − 2 en litige = 8.
     const encore = await api().post('/api/v1/litiges').set(rc.acheteur.h).send({ order_id: commande.id, type: 'manquant', description: 'Manquants', lines: [{ line_no: 1, quantity: 9 }] });

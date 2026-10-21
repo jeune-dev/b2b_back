@@ -2,7 +2,7 @@
 
 > Généré depuis le code (routes réellement montées, schémas de validation Joi, middlewares d’accès, modèles), le 2026-10-21, par `node scripts/generer-contrats.js`. Les exemples sont de **vraies requêtes et réponses** de l’API, capturées pendant la suite de tests sur une base PostgreSQL de test (tableaux réduits à 2 éléments, textes longs tronqués par « … », jetons remplacés par `<jwt>`, secrets par `<masqué>`).
 
-**Périmètre :** les 51 routes du back-office web : routes d’administration (`/admin/*`, rôle `super_admin`), plus la connexion (avec **double authentification obligatoire**), le compte connecté et les notifications de l’administrateur. L’application des entreprises est décrite dans `CONTRAT-API-ENTREPRISE.md`.
+**Périmètre :** les 51 routes du back-office web : routes d’administration (`/admin/*`, rôle `super_admin`), plus la connexion (avec **double authentification obligatoire**), le compte connecté et les notifications de l’administrateur. L’application des entreprises est décrite dans `CONTRAT-API-MOBILE.md`.
 
 ## Mode d’emploi pour l’IA ou le développeur qui intègre
 
@@ -178,7 +178,7 @@ Connexion et mot de passe oublié : 10 essais / 15 min ; routes authentifiées :
 
 ```json
 {
-  "identifiant": "nouveau.06befdd157@test.sn",
+  "identifiant": "nouveau.97c8946641@test.sn",
   "password": "<masqué>"
 }
 ```
@@ -198,12 +198,12 @@ Connexion et mot de passe oublié : 10 essais / 15 min ; routes authentifiées :
     "token_type": "Bearer",
     "expires_in": "15m",
     "user": {
-      "id": "70d57d3c-7f7a-4102-8913-26e9f69a1648",
+      "id": "5a7fb7f4-0527-4030-8365-964f5e158770",
       "role": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "nouveau.06befdd157@test.sn",
-      "phone": "+221778363378",
+      "email": "nouveau.97c8946641@test.sn",
+      "phone": "+221778364275",
       "status": "actif",
       "language": "fr",
       "must_change_password": false,
@@ -246,7 +246,7 @@ Règles globales : exactement un parmi `code`, `code_secours`.
 ```json
 {
   "mfa_token": "<masqué>",
-  "code": "286518"
+  "code_secours": "<masqué>"
 }
 ```
 
@@ -265,12 +265,12 @@ Règles globales : exactement un parmi `code`, `code_secours`.
     "token_type": "Bearer",
     "expires_in": "15m",
     "user": {
-      "id": "a72bbc65-3448-4d8f-92db-eddc3f579659",
+      "id": "1d5efbbb-b888-4cdc-9ef4-7f92fa928e03",
       "role": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.0c29697256@test.sn",
-      "phone": "+221778363395",
+      "email": "admin.03924c8928@test.sn",
+      "phone": "+221776563347",
       "status": "actif",
       "language": "fr",
       "must_change_password": false,
@@ -323,12 +323,12 @@ Règles globales : exactement un parmi `code`, `code_secours`.
     "token_type": "Bearer",
     "expires_in": "15m",
     "user": {
-      "id": "29d1c996-031a-40e8-8b1a-46e0bfd96259",
+      "id": "141fdc54-e423-4dad-aefa-42cc359d7b67",
       "role": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.e5c5d7035c@test.sn",
-      "phone": "+221776562424",
+      "email": "admin.87d4fc308a@test.sn",
+      "phone": "+221776563264",
       "status": "actif",
       "language": "fr",
       "must_change_password": false,
@@ -416,26 +416,26 @@ Monté après `auth` (routes.js) : tout compte authentifié et actif.
   "message": "Succès",
   "data": {
     "user": {
-      "id": "52c4eef0-0605-4bfa-9e29-0b3100365b7f",
+      "id": "e4c56de8-c83f-47a2-aab7-2f880ddd12d3",
       "role_code": "utilisateur",
-      "first_name": "Moussa",
-      "last_name": "Sow",
-      "email": "receptionnaire.a9a730a5a3@test.sn",
-      "phone": null,
-      "job_title": null,
+      "first_name": "Awa",
+      "last_name": "Diop",
+      "email": "admin.f8fbae19e9@test.sn",
+      "phone": "+221776563360",
+      "job_title": "Directrice des achats",
       "status": "actif",
-      "email_verified_at": "2026-10-21T11:14:57.188Z",
+      "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:14:57.211Z",
-      "language": "fr",
+      "last_login_at": "2026-10-21T12:36:15.621Z",
+      "language": "en",
       "totp_enabled_at": null,
-      "created_at": "2026-10-21T11:14:57.189Z",
-      "updated_at": "2026-10-21T11:14:57.211Z"
+      "created_at": "2026-10-21T12:36:15.452Z",
+      "updated_at": "2026-10-21T12:36:15.621Z"
     },
     "company": {
-      "id": "c9084d68-d1a4-45d5-940e-a835c99d30b9",
-      "name": "Société 076bf8",
-      "type": "acheteur",
+      "id": "1a986bdb-918c-4780-9404-527c7ac81a01",
+      "name": "Société bb62f3",
+      "type": "mixte",
       "sector": "distribution",
       "city": "Dakar",
       "country": "SN",
@@ -446,16 +446,16 @@ Monté après `auth` (routes.js) : tout compte authentifié et actif.
       "default_tax_rate": 18
     },
     "member": {
-      "role": "receptionnaire",
-      "role_label": "Réceptionnaire"
+      "role": "administrateur",
+      "role_label": "Administrateur"
     },
     "permissions": [
-      "achats.lire",
-      "catalogue.lire"
+      "abonnement.gerer",
+      "achats.approuver"
     ],
     "abonnement": {
       "abonnement": {
-        "id": "098cfb7c-1790-4fa3-a089-95b2f060ed0b",
+        "id": "59d9e47d-305a-4b8b-98c1-edfbb5bc8b73",
         "status": "essai",
         "current_period_end": "2026-11-20",
         "trial_ends_at": "2026-11-20"
@@ -523,21 +523,21 @@ Règles globales : au moins un parmi `first_name`, `last_name`, `email`, `phone`
   "message": "Profil mis à jour",
   "data": {
     "user": {
-      "id": "db6ab715-0df5-404b-9e78-8f69dd1c9db1",
+      "id": "e4c56de8-c83f-47a2-aab7-2f880ddd12d3",
       "role_code": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.960cd11b69@test.sn",
-      "phone": "+221776562496",
+      "email": "admin.f8fbae19e9@test.sn",
+      "phone": "+221776563360",
       "job_title": "Directrice des achats",
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:15:40.590Z",
+      "last_login_at": "2026-10-21T12:36:15.476Z",
       "language": "en",
       "totp_enabled_at": null,
-      "created_at": "2026-10-21T11:15:40.489Z",
-      "updated_at": "2026-10-21T11:15:40.679Z"
+      "created_at": "2026-10-21T12:36:15.452Z",
+      "updated_at": "2026-10-21T12:36:15.516Z"
     }
   }
 }
@@ -615,25 +615,25 @@ Règles globales : au moins un parmi `first_name`, `last_name`, `email`, `phone`
   "data": {
     "sessions": [
       {
-        "id": "38272d3f-98db-44f2-b199-38bc1eed6e34",
+        "id": "163a36d4-5e59-4a8a-8e39-812abb5fd9e7",
         "device_name": "Téléphone",
         "platform": "android",
         "ip": "::ffff:127.0.0.1",
         "user_agent": null,
-        "last_used_at": "2026-10-21T11:15:46.179Z",
-        "created_at": "2026-10-21T11:15:46.179Z",
-        "expires_at": "2026-11-20T11:15:46.000Z",
+        "last_used_at": "2026-10-21T12:35:12.219Z",
+        "created_at": "2026-10-21T12:35:12.219Z",
+        "expires_at": "2026-11-20T12:35:12.000Z",
         "current": true
       },
       {
-        "id": "af35b7f8-2473-4df4-bbf5-2a6c21470009",
+        "id": "410428b0-1f03-4906-a8dd-5c39b5ee7250",
         "device_name": "Tablette",
         "platform": "ios",
         "ip": "::ffff:127.0.0.1",
         "user_agent": null,
-        "last_used_at": "2026-10-21T11:15:46.143Z",
-        "created_at": "2026-10-21T11:15:46.144Z",
-        "expires_at": "2026-11-20T11:15:46.000Z",
+        "last_used_at": "2026-10-21T12:35:12.169Z",
+        "created_at": "2026-10-21T12:35:12.169Z",
+        "expires_at": "2026-11-20T12:35:12.000Z",
         "current": false
       }
     ]
@@ -759,7 +759,7 @@ Double authentification TOTP (obligatoire pour le super admin).
 
 ```json
 {
-  "code": "031400"
+  "code": "614034"
 }
 ```
 
@@ -854,7 +854,7 @@ Règles globales : exactement un parmi `code`, `code_secours`.
 ```json
 {
   "current_password": "<masqué>",
-  "code": "746393"
+  "code": "661819"
 }
 ```
 
@@ -919,27 +919,27 @@ Exemple de query string réelle : `?non_lues=true`
   "data": {
     "items": [
       {
-        "id": "6c689b58-bdea-419b-aab3-e3676edb2119",
+        "id": "18a3b390-02bb-4774-acbd-7069d8aa3f5f",
         "type": "nouveau_bon_commande",
         "title": "Nouveau bon de commande",
-        "body": "Société 3cffa8 vous a envoyé le bon de commande BC-2026-00001 (187 000 FCFA).",
+        "body": "Société e1a1c7 vous a envoyé le bon de commande BC-2026-00001 (187 000 FCFA).",
         "data": {
           "number": "BC-2026-00001",
-          "order_id": "060e5b0b-1125-43ce-afba-6bf744ea390b"
+          "order_id": "8c2b4447-10e0-4fbd-a44b-3d793c02f776"
         },
         "read_at": null,
-        "created_at": "2026-10-21T11:15:42.552Z"
+        "created_at": "2026-10-21T12:36:13.581Z"
       },
       {
-        "id": "3e234eb7-8b2f-44c8-846e-ac11674e44d4",
+        "id": "2f1a3a31-a4da-424b-9aca-7e42c0cb61ff",
         "type": "partenariat",
         "title": "Demande de partenariat",
-        "body": "Société 3cffa8 souhaite vous ajouter comme fournisseur.",
+        "body": "Société e1a1c7 souhaite vous ajouter comme fournisseur.",
         "data": {
-          "partnership_id": "9ac9a794-3993-4b50-b7f6-3d87564acc61"
+          "partnership_id": "60ff4d82-79eb-47ee-95fe-019b2d6c00ca"
         },
         "read_at": null,
-        "created_at": "2026-10-21T11:15:42.219Z"
+        "created_at": "2026-10-21T12:36:13.285Z"
       }
     ],
     "pagination": {
@@ -1028,16 +1028,16 @@ Exemple de query string réelle : `?non_lues=true`
   "message": "Notification lue",
   "data": {
     "notification": {
-      "id": "6c689b58-bdea-419b-aab3-e3676edb2119",
+      "id": "18a3b390-02bb-4774-acbd-7069d8aa3f5f",
       "type": "nouveau_bon_commande",
       "title": "Nouveau bon de commande",
-      "body": "Société 3cffa8 vous a envoyé le bon de commande BC-2026-00001 (187 000 FCFA).",
+      "body": "Société e1a1c7 vous a envoyé le bon de commande BC-2026-00001 (187 000 FCFA).",
       "data": {
         "number": "BC-2026-00001",
-        "order_id": "060e5b0b-1125-43ce-afba-6bf744ea390b"
+        "order_id": "8c2b4447-10e0-4fbd-a44b-3d793c02f776"
       },
-      "read_at": "2026-10-21T11:15:42.694Z",
-      "created_at": "2026-10-21T11:15:42.552Z"
+      "read_at": "2026-10-21T12:36:13.704Z",
+      "created_at": "2026-10-21T12:36:13.581Z"
     }
   }
 }
@@ -1077,53 +1077,45 @@ Espace Super Admin (§ 5.4) — web uniquement. Monté dans routes.js derrière 
         "end": "2026-10-31"
       },
       "companies": {
-        "total": 67,
+        "total": 125,
         "suspended": 0,
-        "new_this_month": 67,
+        "new_this_month": 125,
         "by_type": {
-          "acheteur": 19,
-          "fournisseur": 20,
-          "mixte": 28
+          "acheteur": 54,
+          "fournisseur": 56,
+          "mixte": 15
         }
       },
       "users": {
-        "total": 70,
-        "active_this_month": 70
+        "total": 135,
+        "active_this_month": 135
       },
-      "partnerships": 19,
-      "products": 40,
+      "partnerships": 48,
+      "products": 106,
       "orders": {
-        "sent": 22,
-        "validated": 19,
-        "volume": 3468960
+        "sent": 49,
+        "validated": 30,
+        "volume": 5330980
       },
       "invoices": {
-        "count": 16,
-        "amount": 2862560
+        "count": 15,
+        "amount": 2865660
       },
-      "payments": 715960,
+      "payments": 176000,
       "subscriptions": {
         "by_status": {
-          "essai": 64,
-          "actif": 1,
-          "expire": 1,
-          "annule": 1
+          "essai": 125
         },
         "by_plan": [
           {
             "code": "BUSINESS",
             "name": "Business",
-            "count": 63
-          },
-          {
-            "code": "ESSENTIEL",
-            "name": "Essentiel",
-            "count": 1
+            "count": 125
           }
         ],
-        "mrr": 60000
+        "mrr": 0
       },
-      "generated_at": "2026-10-21T11:15:18.005Z"
+      "generated_at": "2026-10-21T12:35:58.860Z"
     }
   }
 }
@@ -1170,27 +1162,33 @@ Espace Super Admin (§ 5.4) — web uniquement. Monté dans routes.js derrière 
         {
           "month": "2026-10",
           "type": "acheteur",
-          "count": 48
+          "count": 51
         },
         {
           "month": "2026-10",
           "type": "fournisseur",
-          "count": 49
+          "count": 51
         }
       ],
       "orders": [
         {
           "month": "2026-10",
-          "count": 15,
-          "amount": 2712980
+          "count": 27,
+          "amount": 4628360
         }
       ],
       "invoices": [
         {
+          "month": "2026-09",
+          "count": 1,
+          "amount": 187000,
+          "paid": 1000
+        },
+        {
           "month": "2026-10",
-          "count": 6,
-          "amount": 1122000,
-          "paid": 118200
+          "count": 21,
+          "amount": 3522060,
+          "paid": 840160
         }
       ]
     }
@@ -1233,7 +1231,7 @@ Espace Super Admin (§ 5.4) — web uniquement. Monté dans routes.js derrière 
 | `tri` | string | non | valeurs : `created_at`, `-created_at`, `name`, `-name` |
 
 
-Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=acheteur&abonnement=essai`
+Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792586172165&type=acheteur&abonnement=essai`
 
 **Réponse 200 :** liste paginée : `data.items` (tableau ; chaque élément contient `id`, `name`, `legal_name`, `type`, `sector`, `description`, `address`, `city`, `country`, `phone`, `email`, `website`, `ninea`, `rccm`, `tax_regime`, `vat_registered`, `default_tax_rate`, `currency`, `logo_document_id`, `is_listed`, `status`, `suspended_reason`, `created_by`, `created_at`, `updated_at`, `deleted_at`, `members_count`, `partners_count`, `products_count`, `orders_count`, `subscription_status`, `plan_code`, `current_period_end`) et `data.pagination`.
 
@@ -1246,8 +1244,8 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
   "data": {
     "items": [
       {
-        "id": "aebaff1a-e57b-48d7-b62d-80d91c484d4f",
-        "name": "Hôtel Teranga 1792581324692",
+        "id": "2b3b7584-89c9-4a57-b816-f7180b6cd06b",
+        "name": "Hôtel Teranga 1792586172165",
         "legal_name": null,
         "type": "acheteur",
         "sector": "hotel",
@@ -1255,10 +1253,10 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
         "address": null,
         "city": "Dakar",
         "country": "SN",
-        "phone": "+221776562489",
-        "email": "admin.c4e1d0c68c@test.sn",
+        "phone": "+221778364302",
+        "email": "admin.563206ea70@test.sn",
         "website": null,
-        "ninea": "416715380",
+        "ninea": "530345595",
         "rccm": null,
         "tax_regime": null,
         "vat_registered": true,
@@ -1268,9 +1266,9 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
         "is_listed": true,
         "status": "actif",
         "suspended_reason": null,
-        "created_by": "9c745e04-20e6-4991-8a19-f1aa68157573",
-        "created_at": "2026-10-21T11:15:24.734Z",
-        "updated_at": "2026-10-21T11:15:24.734Z",
+        "created_by": "95e4fe2e-cee0-4ebe-9815-e1e16d701e18",
+        "created_at": "2026-10-21T12:36:12.212Z",
+        "updated_at": "2026-10-21T12:36:12.212Z",
         "deleted_at": null,
         "members_count": 1,
         "partners_count": 0,
@@ -1317,8 +1315,8 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
   "message": "Succès",
   "data": {
     "company": {
-      "id": "aebaff1a-e57b-48d7-b62d-80d91c484d4f",
-      "name": "Hôtel Teranga 1792581324692",
+      "id": "2b3b7584-89c9-4a57-b816-f7180b6cd06b",
+      "name": "Hôtel Teranga 1792586172165",
       "legal_name": null,
       "type": "acheteur",
       "sector": "hotel",
@@ -1326,10 +1324,10 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "address": null,
       "city": "Dakar",
       "country": "SN",
-      "phone": "+221776562489",
-      "email": "admin.c4e1d0c68c@test.sn",
+      "phone": "+221778364302",
+      "email": "admin.563206ea70@test.sn",
       "website": null,
-      "ninea": "416715380",
+      "ninea": "530345595",
       "rccm": null,
       "tax_regime": null,
       "vat_registered": true,
@@ -1339,9 +1337,9 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "is_listed": true,
       "status": "actif",
       "suspended_reason": null,
-      "created_by": "9c745e04-20e6-4991-8a19-f1aa68157573",
-      "created_at": "2026-10-21T11:15:24.734Z",
-      "updated_at": "2026-10-21T11:15:24.734Z",
+      "created_by": "95e4fe2e-cee0-4ebe-9815-e1e16d701e18",
+      "created_at": "2026-10-21T12:36:12.212Z",
+      "updated_at": "2026-10-21T12:36:12.212Z",
       "deleted_at": null,
       "members_count": 1,
       "partners_count": 0,
@@ -1352,20 +1350,20 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "current_period_end": "2026-11-20",
       "settings_customized": false,
       "subscription": {
-        "id": "09c9f8a6-5661-491b-aabd-d424d3e2e93f",
-        "company_id": "aebaff1a-e57b-48d7-b62d-80d91c484d4f",
-        "plan_id": "7da76c36-3fe1-4a79-9e7f-465c31e81a30",
+        "id": "a84542e2-7e36-4e6f-94ad-07c9257e883c",
+        "company_id": "2b3b7584-89c9-4a57-b816-f7180b6cd06b",
+        "plan_id": "c8d74d4b-e697-4c55-afac-e064699afbdb",
         "status": "essai",
-        "started_at": "2026-10-21T11:15:24.747Z",
+        "started_at": "2026-10-21T12:36:12.233Z",
         "current_period_start": "2026-10-21",
         "current_period_end": "2026-11-20",
         "trial_ends_at": "2026-11-20",
         "cancelled_at": null,
         "suspended_reason": null,
-        "created_at": "2026-10-21T11:15:24.748Z",
-        "updated_at": "2026-10-21T11:15:24.748Z",
+        "created_at": "2026-10-21T12:36:12.235Z",
+        "updated_at": "2026-10-21T12:36:12.235Z",
         "plan": {
-          "id": "7da76c36-3fe1-4a79-9e7f-465c31e81a30",
+          "id": "c8d74d4b-e697-4c55-afac-e064699afbdb",
           "code": "BUSINESS",
           "name": "Business",
           "price": 25000,
@@ -1374,18 +1372,18 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       },
       "members": [
         {
-          "id": "e99603cc-5c9a-46f6-be3c-555b00892d4b",
+          "id": "8742549f-69ce-46c0-ba47-cc183de6a868",
           "role_code": "administrateur",
           "status": "actif",
-          "created_at": "2026-10-21T11:15:24.740Z",
+          "created_at": "2026-10-21T12:36:12.220Z",
           "user": {
-            "id": "9c745e04-20e6-4991-8a19-f1aa68157573",
+            "id": "95e4fe2e-cee0-4ebe-9815-e1e16d701e18",
             "first_name": "Awa",
             "last_name": "Diop",
-            "email": "admin.c4e1d0c68c@test.sn",
-            "phone": "+221776562489",
+            "email": "admin.563206ea70@test.sn",
+            "phone": "+221778364302",
             "status": "actif",
-            "last_login_at": "2026-10-21T11:15:24.767Z"
+            "last_login_at": "2026-10-21T12:36:12.267Z"
           }
         }
       ],
@@ -1443,8 +1441,8 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
   "message": "Entreprise suspendue",
   "data": {
     "company": {
-      "id": "ec5d9cdf-3ca9-40a7-93c9-2476d5d53511",
-      "name": "Société 3da30c",
+      "id": "868ba28b-8db8-4706-a938-274db118589e",
+      "name": "Société 6ad5f4",
       "legal_name": null,
       "type": "mixte",
       "sector": "distribution",
@@ -1452,10 +1450,10 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "address": null,
       "city": "Dakar",
       "country": "SN",
-      "phone": "+221776562490",
-      "email": "admin.4e46b91fef@test.sn",
+      "phone": "+221778364305",
+      "email": "admin.82ceb8597e@test.sn",
       "website": null,
-      "ninea": "953834243",
+      "ninea": "753415059",
       "rccm": null,
       "tax_regime": null,
       "vat_registered": true,
@@ -1467,9 +1465,9 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "settings": {},
       "status": "suspendu",
       "suspended_reason": "Fraude suspectée",
-      "created_by": "919e9839-4dfa-484a-b16d-f2fabd53eae6",
-      "created_at": "2026-10-21T11:15:25.003Z",
-      "updated_at": "2026-10-21T11:15:25.201Z",
+      "created_by": "e016ecf5-692c-4f9c-a346-a9e391d5d110",
+      "created_at": "2026-10-21T12:36:13.782Z",
+      "updated_at": "2026-10-21T12:36:13.943Z",
       "deleted_at": null
     }
   }
@@ -1506,8 +1504,8 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
   "message": "Entreprise réactivée",
   "data": {
     "company": {
-      "id": "ec5d9cdf-3ca9-40a7-93c9-2476d5d53511",
-      "name": "Société 3da30c",
+      "id": "868ba28b-8db8-4706-a938-274db118589e",
+      "name": "Société 6ad5f4",
       "legal_name": null,
       "type": "mixte",
       "sector": "distribution",
@@ -1515,10 +1513,10 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "address": null,
       "city": "Dakar",
       "country": "SN",
-      "phone": "+221776562490",
-      "email": "admin.4e46b91fef@test.sn",
+      "phone": "+221778364305",
+      "email": "admin.82ceb8597e@test.sn",
       "website": null,
-      "ninea": "953834243",
+      "ninea": "753415059",
       "rccm": null,
       "tax_regime": null,
       "vat_registered": true,
@@ -1530,9 +1528,9 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
       "settings": {},
       "status": "actif",
       "suspended_reason": null,
-      "created_by": "919e9839-4dfa-484a-b16d-f2fabd53eae6",
-      "created_at": "2026-10-21T11:15:25.003Z",
-      "updated_at": "2026-10-21T11:15:25.340Z",
+      "created_by": "e016ecf5-692c-4f9c-a346-a9e391d5d110",
+      "created_at": "2026-10-21T12:36:13.782Z",
+      "updated_at": "2026-10-21T12:36:14.061Z",
       "deleted_at": null
     }
   }
@@ -1589,37 +1587,37 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
   "message": "Abonnement activé",
   "data": {
     "payment": {
-      "id": "32930e30-853d-4b21-b4b0-6d0b3f34a0c2",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "subscription_id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "93b497ae-ea7c-46f8-a318-54adddab40a7",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "subscription_id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "amount": 25000,
       "currency": "XOF",
       "months": 3,
       "provider": "manuel",
-      "reference": "ABO-20261021-000001",
+      "reference": "ABO-20261021-000002",
       "status": "confirme",
-      "paid_at": "2026-10-21T11:14:14.894Z",
-      "recorded_by": "367ad23c-eda4-4e6c-b0e1-b39d627efed6",
+      "paid_at": "2026-10-21T12:36:22.014Z",
+      "recorded_by": "792151dd-1a62-4e8e-8fbe-fabf1d749c0e",
       "note": "Virement reçu",
-      "updated_at": "2026-10-21T11:14:14.895Z",
-      "created_at": "2026-10-21T11:14:14.895Z",
+      "updated_at": "2026-10-21T12:36:22.014Z",
+      "created_at": "2026-10-21T12:36:22.014Z",
       "provider_transaction_id": null,
       "checkout_url": null
     },
     "subscription": {
-      "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "status": "actif",
-      "started_at": "2026-10-21T11:14:14.798Z",
+      "started_at": "2026-10-21T12:36:21.950Z",
       "current_period_start": "2026-10-21",
       "current_period_end": "2027-01-21",
       "trial_ends_at": "2026-11-20",
       "cancelled_at": null,
       "suspended_reason": null,
-      "created_at": "2026-10-21T11:14:14.802Z",
-      "updated_at": "2026-10-21T11:14:14.886Z"
+      "created_at": "2026-10-21T12:36:21.950Z",
+      "updated_at": "2026-10-21T12:36:22.009Z"
     }
   }
 }
@@ -1658,7 +1656,7 @@ Exemple de query string réelle : `?q=H%C3%B4tel%20Teranga%201792581324692&type=
 | `tri` | string | non | valeurs : `created_at`, `-created_at`, `current_period_end`, `-current_period_end` |
 
 
-Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107587`
+Exemple de query string réelle : `?company_id=8a236099-c8cd-4363-ba34-47eb39011557`
 
 **Réponse 200 :** liste paginée : `data.items` (tableau ; chaque élément contient `id`, `company_id`, `plan_id`, `status`, `started_at`, `current_period_start`, `current_period_end`, `trial_ends_at`, `cancelled_at`, `suspended_reason`, `created_at`, `updated_at`, `plan`, `company`) et `data.pagination`.
 
@@ -1671,31 +1669,31 @@ Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107
   "data": {
     "items": [
       {
-        "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-        "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-        "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+        "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+        "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+        "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
         "status": "annule",
-        "started_at": "2026-10-21T11:14:14.798Z",
+        "started_at": "2026-10-21T12:36:21.950Z",
         "current_period_start": "2026-10-21",
         "current_period_end": "2027-01-21",
         "trial_ends_at": "2026-11-20",
-        "cancelled_at": "2026-10-21T11:14:15.080Z",
+        "cancelled_at": "2026-10-21T12:36:22.194Z",
         "suspended_reason": null,
-        "created_at": "2026-10-21T11:14:14.802Z",
-        "updated_at": "2026-10-21T11:14:15.083Z",
+        "created_at": "2026-10-21T12:36:21.950Z",
+        "updated_at": "2026-10-21T12:36:22.197Z",
         "plan": {
-          "id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+          "id": "694c328a-7df7-471a-8481-44f19bfcc653",
           "code": "ESSENTIEL",
           "name": "Essentiel",
           "price": 10000,
           "billing_period": "mensuel"
         },
         "company": {
-          "id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-          "name": "Société 47b707",
+          "id": "8a236099-c8cd-4363-ba34-47eb39011557",
+          "name": "Société 59ea96",
           "type": "mixte",
-          "phone": "+221778363309",
-          "email": "admin.7881d70883@test.sn",
+          "phone": "+221776563364",
+          "email": "admin.b771b9529d@test.sn",
           "status": "actif"
         }
       }
@@ -1736,54 +1734,54 @@ Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107
   "message": "Succès",
   "data": {
     "subscription": {
-      "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "status": "annule",
-      "started_at": "2026-10-21T11:14:14.798Z",
+      "started_at": "2026-10-21T12:36:21.950Z",
       "current_period_start": "2026-10-21",
       "current_period_end": "2027-01-21",
       "trial_ends_at": "2026-11-20",
-      "cancelled_at": "2026-10-21T11:14:15.080Z",
+      "cancelled_at": "2026-10-21T12:36:22.194Z",
       "suspended_reason": null,
-      "created_at": "2026-10-21T11:14:14.802Z",
-      "updated_at": "2026-10-21T11:14:15.083Z",
+      "created_at": "2026-10-21T12:36:21.950Z",
+      "updated_at": "2026-10-21T12:36:22.197Z",
       "plan": {
-        "id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+        "id": "694c328a-7df7-471a-8481-44f19bfcc653",
         "code": "ESSENTIEL",
         "name": "Essentiel",
         "price": 10000,
         "billing_period": "mensuel"
       },
       "company": {
-        "id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-        "name": "Société 47b707",
+        "id": "8a236099-c8cd-4363-ba34-47eb39011557",
+        "name": "Société 59ea96",
         "type": "mixte",
-        "phone": "+221778363309",
-        "email": "admin.7881d70883@test.sn",
+        "phone": "+221776563364",
+        "email": "admin.b771b9529d@test.sn",
         "status": "actif"
       },
       "payments": [
         {
-          "id": "32930e30-853d-4b21-b4b0-6d0b3f34a0c2",
-          "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-          "subscription_id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-          "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+          "id": "93b497ae-ea7c-46f8-a318-54adddab40a7",
+          "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+          "subscription_id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+          "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
           "amount": 25000,
           "currency": "XOF",
           "months": 3,
           "provider": "manuel",
-          "reference": "ABO-20261021-000001",
+          "reference": "ABO-20261021-000002",
           "provider_transaction_id": null,
           "status": "confirme",
           "checkout_url": null,
-          "paid_at": "2026-10-21T11:14:14.894Z",
-          "recorded_by": "367ad23c-eda4-4e6c-b0e1-b39d627efed6",
+          "paid_at": "2026-10-21T12:36:22.014Z",
+          "recorded_by": "792151dd-1a62-4e8e-8fbe-fabf1d749c0e",
           "note": "Virement reçu",
-          "created_at": "2026-10-21T11:14:14.895Z",
-          "updated_at": "2026-10-21T11:14:14.895Z",
+          "created_at": "2026-10-21T12:36:22.014Z",
+          "updated_at": "2026-10-21T12:36:22.014Z",
           "plan": {
-            "id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+            "id": "694c328a-7df7-471a-8481-44f19bfcc653",
             "code": "ESSENTIEL",
             "name": "Essentiel"
           }
@@ -1837,18 +1835,18 @@ Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107
   "message": "Abonnement suspendu",
   "data": {
     "subscription": {
-      "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "status": "suspendu",
-      "started_at": "2026-10-21T11:14:14.798Z",
+      "started_at": "2026-10-21T12:36:21.950Z",
       "current_period_start": "2026-10-21",
       "current_period_end": "2027-01-21",
       "trial_ends_at": "2026-11-20",
       "cancelled_at": null,
       "suspended_reason": "Litige de paiement",
-      "created_at": "2026-10-21T11:14:14.802Z",
-      "updated_at": "2026-10-21T11:14:14.965Z"
+      "created_at": "2026-10-21T12:36:21.950Z",
+      "updated_at": "2026-10-21T12:36:22.061Z"
     }
   }
 }
@@ -1882,18 +1880,18 @@ Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107
   "message": "Abonnement rétabli",
   "data": {
     "subscription": {
-      "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "status": "actif",
-      "started_at": "2026-10-21T11:14:14.798Z",
+      "started_at": "2026-10-21T12:36:21.950Z",
       "current_period_start": "2026-10-21",
       "current_period_end": "2027-01-21",
       "trial_ends_at": "2026-11-20",
       "cancelled_at": null,
       "suspended_reason": null,
-      "created_at": "2026-10-21T11:14:14.802Z",
-      "updated_at": "2026-10-21T11:14:15.018Z"
+      "created_at": "2026-10-21T12:36:21.950Z",
+      "updated_at": "2026-10-21T12:36:22.117Z"
     }
   }
 }
@@ -1942,18 +1940,18 @@ Exemple de query string réelle : `?company_id=735a959f-c88f-4bf5-af0d-06fc21107
   "message": "Abonnement annulé",
   "data": {
     "subscription": {
-      "id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-      "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-      "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+      "id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+      "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+      "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
       "status": "annule",
-      "started_at": "2026-10-21T11:14:14.798Z",
+      "started_at": "2026-10-21T12:36:21.950Z",
       "current_period_start": "2026-10-21",
       "current_period_end": "2027-01-21",
       "trial_ends_at": "2026-11-20",
-      "cancelled_at": "2026-10-21T11:14:15.080Z",
+      "cancelled_at": "2026-10-21T12:36:22.194Z",
       "suspended_reason": null,
-      "created_at": "2026-10-21T11:14:14.802Z",
-      "updated_at": "2026-10-21T11:14:15.083Z"
+      "created_at": "2026-10-21T12:36:21.950Z",
+      "updated_at": "2026-10-21T12:36:22.197Z"
     }
   }
 }
@@ -2002,34 +2000,34 @@ Exemple de query string réelle : `?provider=manuel`
   "data": {
     "items": [
       {
-        "id": "32930e30-853d-4b21-b4b0-6d0b3f34a0c2",
-        "company_id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-        "subscription_id": "5b0169be-04d1-416f-81ef-31be69b7edc6",
-        "plan_id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+        "id": "93b497ae-ea7c-46f8-a318-54adddab40a7",
+        "company_id": "8a236099-c8cd-4363-ba34-47eb39011557",
+        "subscription_id": "7f82d92e-27a2-4d9c-9282-323356d8c69f",
+        "plan_id": "694c328a-7df7-471a-8481-44f19bfcc653",
         "amount": 25000,
         "currency": "XOF",
         "months": 3,
         "provider": "manuel",
-        "reference": "ABO-20261021-000001",
+        "reference": "ABO-20261021-000002",
         "provider_transaction_id": null,
         "status": "confirme",
         "checkout_url": null,
-        "paid_at": "2026-10-21T11:14:14.894Z",
-        "recorded_by": "367ad23c-eda4-4e6c-b0e1-b39d627efed6",
+        "paid_at": "2026-10-21T12:36:22.014Z",
+        "recorded_by": "792151dd-1a62-4e8e-8fbe-fabf1d749c0e",
         "note": "Virement reçu",
-        "created_at": "2026-10-21T11:14:14.895Z",
-        "updated_at": "2026-10-21T11:14:14.895Z",
+        "created_at": "2026-10-21T12:36:22.014Z",
+        "updated_at": "2026-10-21T12:36:22.014Z",
         "plan": {
-          "id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+          "id": "694c328a-7df7-471a-8481-44f19bfcc653",
           "code": "ESSENTIEL",
           "name": "Essentiel"
         },
         "company": {
-          "id": "735a959f-c88f-4bf5-af0d-06fc21107587",
-          "name": "Société 47b707",
+          "id": "8a236099-c8cd-4363-ba34-47eb39011557",
+          "name": "Société 59ea96",
           "type": "mixte",
-          "phone": "+221778363309",
-          "email": "admin.7881d70883@test.sn",
+          "phone": "+221776563364",
+          "email": "admin.b771b9529d@test.sn",
           "status": "actif"
         }
       }
@@ -2079,7 +2077,7 @@ Exemple de query string réelle : `?provider=manuel`
 | `tri` | string | non | valeurs : `created_at`, `-created_at`, `last_name`, `-last_name`, `last_login_at`, `-last_login_at` |
 
 
-Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
+Exemple de query string réelle : `?q=admin.8f3dea6c1e%40test.sn`
 
 **Réponse 200 :** liste paginée : `data.items` (tableau ; chaque élément contient `id`, `role_code`, `first_name`, `last_name`, `email`, `phone`, `status`, `email_verified_at`, `must_change_password`, `last_login_at`, `language`, `created_at`, `updated_at`, `totp_enabled_at`, `is_locked`) et `data.pagination`.
 
@@ -2092,19 +2090,19 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "data": {
     "items": [
       {
-        "id": "c4e84d86-513a-4f21-a9ed-4671f6cb7407",
+        "id": "5c75762d-4eeb-4a35-8a77-a23728a47eca",
         "role_code": "utilisateur",
         "first_name": "Awa",
         "last_name": "Diop",
-        "email": "admin.2fd13a1c25@test.sn",
-        "phone": "+221776562487",
+        "email": "admin.8f3dea6c1e@test.sn",
+        "phone": "+221778364306",
         "status": "actif",
         "email_verified_at": null,
         "must_change_password": false,
-        "last_login_at": "2026-10-21T11:15:22.881Z",
+        "last_login_at": "2026-10-21T12:36:14.209Z",
         "language": "fr",
-        "created_at": "2026-10-21T11:15:22.797Z",
-        "updated_at": "2026-10-21T11:15:22.881Z",
+        "created_at": "2026-10-21T12:36:14.181Z",
+        "updated_at": "2026-10-21T12:36:14.209Z",
         "totp_enabled_at": null,
         "is_locked": false
       }
@@ -2146,7 +2144,7 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
 {
   "first_name": "Awa",
   "last_name": "Sow",
-  "email": "admin.provisoire.e086fe62c8@test.sn",
+  "email": "admin.provisoire.86fdb6a91e@test.sn",
   "password": "<masqué>",
   "current_password": "<masqué>"
 }
@@ -2164,19 +2162,19 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Super administrateur créé",
   "data": {
     "user": {
-      "id": "8186563a-2af6-43fd-b5d7-1fca67e0cf33",
+      "id": "08d00937-e8f2-4604-9476-7e7fae430097",
       "role_code": "super_admin",
       "first_name": "Awa",
       "last_name": "Sow",
-      "email": "admin.provisoire.e086fe62c8@test.sn",
+      "email": "admin.provisoire.86fdb6a91e@test.sn",
       "phone": null,
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": true,
       "last_login_at": null,
       "language": "fr",
-      "created_at": "2026-10-21T11:15:17.648Z",
-      "updated_at": "2026-10-21T11:15:17.648Z",
+      "created_at": "2026-10-21T12:35:58.871Z",
+      "updated_at": "2026-10-21T12:35:58.871Z",
       "totp_enabled_at": null,
       "is_locked": false
     }
@@ -2212,30 +2210,30 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Succès",
   "data": {
     "user": {
-      "id": "c4e84d86-513a-4f21-a9ed-4671f6cb7407",
+      "id": "5c75762d-4eeb-4a35-8a77-a23728a47eca",
       "role_code": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.2fd13a1c25@test.sn",
-      "phone": "+221776562487",
+      "email": "admin.8f3dea6c1e@test.sn",
+      "phone": "+221778364306",
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:15:22.881Z",
+      "last_login_at": "2026-10-21T12:36:14.209Z",
       "language": "fr",
-      "created_at": "2026-10-21T11:15:22.797Z",
-      "updated_at": "2026-10-21T11:15:22.881Z",
+      "created_at": "2026-10-21T12:36:14.181Z",
+      "updated_at": "2026-10-21T12:36:14.209Z",
       "totp_enabled_at": null,
       "is_locked": false,
       "memberships": [
         {
-          "id": "2985facb-b5eb-4b1d-b5d9-aa3e7995f672",
-          "company_id": "d83c955a-cd0b-4077-8a95-54b288e438d5",
+          "id": "e8d2f4df-1d7d-4054-a80d-abf657f416f8",
+          "company_id": "0be47ac3-1302-4e08-bcf2-12d4c9ce66b8",
           "role_code": "administrateur",
           "status": "actif",
           "company": {
-            "id": "d83c955a-cd0b-4077-8a95-54b288e438d5",
-            "name": "Société 20b279",
+            "id": "0be47ac3-1302-4e08-bcf2-12d4c9ce66b8",
+            "name": "Société c6cf88",
             "type": "mixte",
             "status": "actif"
           }
@@ -2290,19 +2288,19 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Compte désactivé",
   "data": {
     "user": {
-      "id": "c4e84d86-513a-4f21-a9ed-4671f6cb7407",
+      "id": "5c75762d-4eeb-4a35-8a77-a23728a47eca",
       "role_code": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.2fd13a1c25@test.sn",
-      "phone": "+221776562487",
+      "email": "admin.8f3dea6c1e@test.sn",
+      "phone": "+221778364306",
       "status": "inactif",
       "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:15:22.881Z",
+      "last_login_at": "2026-10-21T12:36:14.209Z",
       "language": "fr",
-      "created_at": "2026-10-21T11:15:22.797Z",
-      "updated_at": "2026-10-21T11:15:23.011Z",
+      "created_at": "2026-10-21T12:36:14.181Z",
+      "updated_at": "2026-10-21T12:36:14.282Z",
       "totp_enabled_at": null,
       "is_locked": false
     }
@@ -2338,19 +2336,19 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Compte activé",
   "data": {
     "user": {
-      "id": "c4e84d86-513a-4f21-a9ed-4671f6cb7407",
+      "id": "5c75762d-4eeb-4a35-8a77-a23728a47eca",
       "role_code": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.2fd13a1c25@test.sn",
-      "phone": "+221776562487",
+      "email": "admin.8f3dea6c1e@test.sn",
+      "phone": "+221778364306",
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:15:22.881Z",
+      "last_login_at": "2026-10-21T12:36:14.209Z",
       "language": "fr",
-      "created_at": "2026-10-21T11:15:22.797Z",
-      "updated_at": "2026-10-21T11:15:23.077Z",
+      "created_at": "2026-10-21T12:36:14.181Z",
+      "updated_at": "2026-10-21T12:36:14.326Z",
       "totp_enabled_at": null,
       "is_locked": false
     }
@@ -2386,19 +2384,19 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Compte déverrouillé",
   "data": {
     "user": {
-      "id": "c4e84d86-513a-4f21-a9ed-4671f6cb7407",
+      "id": "5c75762d-4eeb-4a35-8a77-a23728a47eca",
       "role_code": "utilisateur",
       "first_name": "Awa",
       "last_name": "Diop",
-      "email": "admin.2fd13a1c25@test.sn",
-      "phone": "+221776562487",
+      "email": "admin.8f3dea6c1e@test.sn",
+      "phone": "+221778364306",
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": false,
-      "last_login_at": "2026-10-21T11:15:22.881Z",
+      "last_login_at": "2026-10-21T12:36:14.209Z",
       "language": "fr",
-      "created_at": "2026-10-21T11:15:22.797Z",
-      "updated_at": "2026-10-21T11:15:23.869Z",
+      "created_at": "2026-10-21T12:36:14.181Z",
+      "updated_at": "2026-10-21T12:36:14.481Z",
       "totp_enabled_at": null,
       "is_locked": false
     }
@@ -2451,23 +2449,23 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "message": "Accès réinitialisé : transmettez le mot de passe provisoire par un canal sûr (il ne sera plus affiché).",
   "data": {
     "user": {
-      "id": "101471e4-64c5-44ca-9fc0-720d5cb467a6",
+      "id": "ec96ce32-5c0f-4360-8c64-d079c78ec2fe",
       "role_code": "super_admin",
       "first_name": "Admin",
       "last_name": "Test",
-      "email": "superadmin.9938666b3a@test.sn",
+      "email": "superadmin.32514704f3@test.sn",
       "phone": null,
       "status": "actif",
       "email_verified_at": null,
       "must_change_password": true,
-      "last_login_at": "2026-10-21T11:15:38.698Z",
+      "last_login_at": "2026-10-21T12:36:00.612Z",
       "language": "fr",
-      "created_at": "2026-10-21T11:15:38.630Z",
-      "updated_at": "2026-10-21T11:15:38.875Z",
+      "created_at": "2026-10-21T12:36:00.541Z",
+      "updated_at": "2026-10-21T12:36:00.710Z",
       "totp_enabled_at": null,
       "is_locked": false
     },
-    "mot_de_passe_provisoire": "V2hGo7MqUBm2SHKV#R"
+    "mot_de_passe_provisoire": "7HnkieY9pfyAgiSCK$"
   }
 }
 ```
@@ -2515,7 +2513,7 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
         "customized": true,
         "description": "Forfait et durée de la période d'essai offerte à l'inscription d'une entreprise",
         "updated_by": null,
-        "updated_at": "2026-10-21T11:13:46.518Z"
+        "updated_at": "2026-10-21T12:34:18.942Z"
       },
       {
         "key": "invitation",
@@ -2528,7 +2526,7 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
         "customized": true,
         "description": "Durée de validité d'une invitation de collaborateur",
         "updated_by": null,
-        "updated_at": "2026-10-21T11:13:46.523Z"
+        "updated_at": "2026-10-21T12:34:18.948Z"
       }
     ]
   }
@@ -2582,8 +2580,8 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
       },
       "customized": true,
       "description": "Durée de validité d'une invitation de collaborateur",
-      "updated_by": "f1edb876-bee9-446a-b76a-4042e7b0bb25",
-      "updated_at": "2026-10-21T11:15:26.859Z"
+      "updated_by": "5cfd9ca3-652a-4fb3-a250-ba1bbefbbc6b",
+      "updated_at": "2026-10-21T12:36:10.991Z"
     }
   }
 }
@@ -2639,7 +2637,7 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "data": {
     "diffusion": {
       "cible": "fournisseurs",
-      "destinataires": 77
+      "destinataires": 98
     }
   }
 }
@@ -2674,15 +2672,15 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
   "data": {
     "items": [
       {
-        "id": 505,
-        "user_id": "f1edb876-bee9-446a-b76a-4042e7b0bb25",
+        "id": 602,
+        "user_id": "5cfd9ca3-652a-4fb3-a250-ba1bbefbbc6b",
         "details": {
           "cible": "fournisseurs",
           "corps": "Le service sera interrompu dimanche de 2 h à 3 h.",
           "titre": "Maintenance",
-          "destinataires": 77
+          "destinataires": 98
         },
-        "created_at": "2026-10-21T11:15:27.065Z"
+        "created_at": "2026-10-21T12:36:11.267Z"
       }
     ],
     "pagination": {
@@ -2728,7 +2726,7 @@ Exemple de query string réelle : `?q=admin.2fd13a1c25%40test.sn`
 | `au` | string | non | date `AAAA-MM-JJ` |
 
 
-Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebefe28&action=entreprise.`
+Exemple de query string réelle : `?company_id=cc0cb2a8-745a-4ffb-89c4-63e89b648d26&action=entreprise.`
 
 **Réponse 200 :** liste paginée : `data.items` (tableau ; chaque élément contient `id`, `user_id`, `company_id`, `actor_role`, `action`, `entity_type`, `entity_id`, `details`, `ip`, `user_agent`, `request_id`, `created_at`) et `data.pagination`.
 
@@ -2741,22 +2739,22 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "data": {
     "items": [
       {
-        "id": 504,
-        "user_id": "d2ba9f8b-589e-40f7-9666-b8d4bd2462f8",
-        "company_id": "a6464959-dc38-47c8-8f3d-0b265ebefe28",
+        "id": 601,
+        "user_id": "9f1bdb3d-a2ff-4b6f-8149-3fd21b401810",
+        "company_id": "cc0cb2a8-745a-4ffb-89c4-63e89b648d26",
         "actor_role": "utilisateur",
         "action": "entreprise.creation",
         "entity_type": "company",
-        "entity_id": "a6464959-dc38-47c8-8f3d-0b265ebefe28",
+        "entity_id": "cc0cb2a8-745a-4ffb-89c4-63e89b648d26",
         "details": {
-          "name": "Société 323e61",
+          "name": "Société d428a1",
           "type": "acheteur",
           "plan_essai": "BUSINESS"
         },
         "ip": "::ffff:127.0.0.1",
         "user_agent": null,
-        "request_id": "4af2dbf6-f7bb-40c0-a0ca-ba1bea701780",
-        "created_at": "2026-10-21T11:15:27.006Z"
+        "request_id": "4320f7df-5c49-471f-a9fe-407d7336f15e",
+        "created_at": "2026-10-21T12:36:11.190Z"
       }
     ],
     "pagination": {
@@ -2803,8 +2801,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
           "entreprise.gerer"
         ],
         "is_system": true,
-        "created_at": "2026-10-21T11:13:47.434Z",
-        "updated_at": "2026-10-21T11:13:47.434Z"
+        "created_at": "2026-10-21T12:34:20.422Z",
+        "updated_at": "2026-10-21T12:34:20.422Z"
       },
       {
         "code": "commercial",
@@ -2815,8 +2813,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
           "partenaires.lire"
         ],
         "is_system": true,
-        "created_at": "2026-10-21T11:13:47.444Z",
-        "updated_at": "2026-10-21T11:13:47.444Z"
+        "created_at": "2026-10-21T12:34:20.434Z",
+        "updated_at": "2026-10-21T12:34:20.434Z"
       }
     ],
     "catalogue": [
@@ -2866,26 +2864,7 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "data": {
     "plans": [
       {
-        "id": "3670efee-39d5-4cb5-a410-2b49e849b7bf",
-        "code": "TEMP83482",
-        "name": "Temporaire",
-        "description": null,
-        "price": 1000,
-        "currency": "XOF",
-        "billing_period": "mensuel",
-        "max_users": null,
-        "max_products": null,
-        "max_partners": null,
-        "max_orders_per_month": null,
-        "features": [],
-        "status": "actif",
-        "sort_order": 0,
-        "created_at": "2026-10-21T11:14:43.531Z",
-        "updated_at": "2026-10-21T11:14:43.595Z",
-        "subscribers_count": 0
-      },
-      {
-        "id": "25e78836-8c6a-4a7f-88e6-32581f2a52b0",
+        "id": "694c328a-7df7-471a-8481-44f19bfcc653",
         "code": "ESSENTIEL",
         "name": "Essentiel",
         "description": "Pour démarrer : commandes, factures et suivi des paiements.",
@@ -2899,9 +2878,31 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
         "features": [],
         "status": "actif",
         "sort_order": 1,
-        "created_at": "2026-10-21T11:13:46.358Z",
-        "updated_at": "2026-10-21T11:13:46.358Z",
+        "created_at": "2026-10-21T12:34:18.694Z",
+        "updated_at": "2026-10-21T12:34:18.694Z",
         "subscribers_count": 0
+      },
+      {
+        "id": "c8d74d4b-e697-4c55-afac-e064699afbdb",
+        "code": "BUSINESS",
+        "name": "Business",
+        "description": "Modèles de documents personnalisés, statistiques et exports.",
+        "price": 25000,
+        "currency": "XOF",
+        "billing_period": "mensuel",
+        "max_users": 10,
+        "max_products": 1000,
+        "max_partners": 100,
+        "max_orders_per_month": 1000,
+        "features": [
+          "modeles_documents",
+          "statistiques"
+        ],
+        "status": "actif",
+        "sort_order": 2,
+        "created_at": "2026-10-21T12:34:18.705Z",
+        "updated_at": "2026-10-21T12:34:18.705Z",
+        "subscribers_count": 146
       }
     ]
   }
@@ -2940,7 +2941,7 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
 
 ```json
 {
-  "code": "TEMP83482",
+  "code": "TEMP46935",
   "name": "Temporaire",
   "price": 1000,
   "status": "inactif"
@@ -2959,17 +2960,17 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "message": "Plan créé",
   "data": {
     "plan": {
-      "id": "3670efee-39d5-4cb5-a410-2b49e849b7bf",
+      "id": "9b842af5-e26b-49a7-a387-922b44fd179d",
       "currency": "XOF",
       "billing_period": "mensuel",
       "features": [],
       "sort_order": 0,
-      "code": "TEMP83482",
+      "code": "TEMP46935",
       "name": "Temporaire",
       "price": 1000,
       "status": "inactif",
-      "updated_at": "2026-10-21T11:14:43.531Z",
-      "created_at": "2026-10-21T11:14:43.531Z",
+      "updated_at": "2026-10-21T12:35:46.958Z",
+      "created_at": "2026-10-21T12:35:46.958Z",
       "description": null,
       "max_users": null,
       "max_products": null,
@@ -3008,8 +3009,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "message": "Succès",
   "data": {
     "plan": {
-      "id": "3670efee-39d5-4cb5-a410-2b49e849b7bf",
-      "code": "TEMP83482",
+      "id": "9b842af5-e26b-49a7-a387-922b44fd179d",
+      "code": "TEMP46935",
       "name": "Temporaire",
       "description": null,
       "price": 1000,
@@ -3022,8 +3023,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
       "features": [],
       "status": "inactif",
       "sort_order": 0,
-      "created_at": "2026-10-21T11:14:43.531Z",
-      "updated_at": "2026-10-21T11:14:43.531Z",
+      "created_at": "2026-10-21T12:35:46.958Z",
+      "updated_at": "2026-10-21T12:35:46.958Z",
       "subscribers_count": 0
     }
   }
@@ -3084,8 +3085,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "message": "Plan modifié",
   "data": {
     "plan": {
-      "id": "4ab1d687-25aa-456f-8bec-68b38dcd74ae",
-      "code": "PROMO27232",
+      "id": "fd3a1ee3-b694-43d3-a44f-73dcc9573afb",
+      "code": "PROMO71653",
       "name": "Promo",
       "description": null,
       "price": 7500,
@@ -3100,8 +3101,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
       ],
       "status": "actif",
       "sort_order": 0,
-      "created_at": "2026-10-21T11:15:27.251Z",
-      "updated_at": "2026-10-21T11:15:27.285Z"
+      "created_at": "2026-10-21T12:36:11.702Z",
+      "updated_at": "2026-10-21T12:36:11.775Z"
     }
   }
 }
@@ -3135,8 +3136,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "message": "Plan activé",
   "data": {
     "plan": {
-      "id": "3670efee-39d5-4cb5-a410-2b49e849b7bf",
-      "code": "TEMP83482",
+      "id": "9b842af5-e26b-49a7-a387-922b44fd179d",
+      "code": "TEMP46935",
       "name": "Temporaire",
       "description": null,
       "price": 1000,
@@ -3149,8 +3150,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
       "features": [],
       "status": "actif",
       "sort_order": 0,
-      "created_at": "2026-10-21T11:14:43.531Z",
-      "updated_at": "2026-10-21T11:14:43.595Z"
+      "created_at": "2026-10-21T12:35:46.958Z",
+      "updated_at": "2026-10-21T12:35:47.016Z"
     }
   }
 }
@@ -3186,8 +3187,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
   "message": "Plan désactivé",
   "data": {
     "plan": {
-      "id": "4ab1d687-25aa-456f-8bec-68b38dcd74ae",
-      "code": "PROMO27232",
+      "id": "fd3a1ee3-b694-43d3-a44f-73dcc9573afb",
+      "code": "PROMO71653",
       "name": "Promo",
       "description": null,
       "price": 7500,
@@ -3202,8 +3203,8 @@ Exemple de query string réelle : `?company_id=a6464959-dc38-47c8-8f3d-0b265ebef
       ],
       "status": "inactif",
       "sort_order": 0,
-      "created_at": "2026-10-21T11:15:27.251Z",
-      "updated_at": "2026-10-21T11:15:27.316Z"
+      "created_at": "2026-10-21T12:36:11.702Z",
+      "updated_at": "2026-10-21T12:36:11.832Z"
     }
   }
 }
@@ -3266,6 +3267,55 @@ Table `audit_logs`.
 | `request_id` | string(128) | oui |  |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 
+### Claim
+
+Table `claims`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `number` | string(40) | non |  |
+| `order_id` | string (uuid) | non |  |
+| `buyer_company_id` | string (uuid) | non |  |
+| `supplier_company_id` | string (uuid) | non |  |
+| `partnership_id` | string (uuid) | non |  |
+| `delivery_id` | string (uuid) | oui |  |
+| `type` | string(20) | non |  |
+| `status` | string(10) | non | ouvert |
+| `description` | string | non |  |
+| `subtotal` | integer (FCFA) | non | 0 |
+| `tax_total` | integer (FCFA) | non | 0 |
+| `total` | integer (FCFA) | non | 0 |
+| `response` | string | oui |  |
+| `restock` | boolean | non | false |
+| `credit_note_id` | string (uuid) | oui |  |
+| `opened_by` | string (uuid) | oui |  |
+| `resolved_at` | string (date-heure ISO 8601) | oui |  |
+| `resolved_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### ClaimLine
+
+Table `claim_lines`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `claim_id` | string (uuid) | non |  |
+| `line_no` | integer | non |  |
+| `product_id` | string (uuid) | oui |  |
+| `reference` | string(60) | oui |  |
+| `name` | string(200) | non |  |
+| `unit` | string(12) | non |  |
+| `quantity` | string (décimal) | non |  |
+| `unit_price` | integer (FCFA) | non |  |
+| `tax_rate` | string (décimal) | non | 0 |
+| `line_subtotal` | integer (FCFA) | non |  |
+| `line_tax` | integer (FCFA) | non |  |
+| `line_total` | integer (FCFA) | non |  |
+| `comment` | string(500) | oui |  |
+
 ### Company
 
 Table `companies`.
@@ -3314,6 +3364,108 @@ Table `company_members`.
 | `invited_by` | string (uuid) | oui |  |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### CreditNote
+
+Table `credit_notes`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `number` | string(40) | non |  |
+| `supplier_company_id` | string (uuid) | non |  |
+| `buyer_company_id` | string (uuid) | non |  |
+| `partnership_id` | string (uuid) | non |  |
+| `order_id` | string (uuid) | oui |  |
+| `invoice_id` | string (uuid) | oui |  |
+| `claim_id` | string (uuid) | oui |  |
+| `status` | string(10) | non | emis |
+| `issue_date` | string (date AAAA-MM-JJ) | non |  |
+| `reason` | string | non |  |
+| `subtotal` | integer (FCFA) | non |  |
+| `tax_total` | integer (FCFA) | non |  |
+| `total` | integer (FCFA) | non |  |
+| `amount_allocated` | integer (FCFA) | non | 0 |
+| `template_id` | string (uuid) | oui |  |
+| `created_by` | string (uuid) | oui |  |
+| `cancelled_at` | string (date-heure ISO 8601) | oui |  |
+| `cancellation_reason` | string | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### CreditNoteAllocation
+
+Table `credit_note_allocations`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `credit_note_id` | string (uuid) | non |  |
+| `invoice_id` | string (uuid) | non |  |
+| `amount` | integer (FCFA) | non |  |
+| `cancelled_at` | string (date-heure ISO 8601) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+
+### CreditNoteLine
+
+Table `credit_note_lines`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `credit_note_id` | string (uuid) | non |  |
+| `line_no` | integer | non |  |
+| `product_id` | string (uuid) | oui |  |
+| `reference` | string(60) | oui |  |
+| `name` | string(200) | non |  |
+| `unit` | string(12) | non |  |
+| `quantity` | string (décimal) | non |  |
+| `unit_price` | integer (FCFA) | non |  |
+| `tax_rate` | string (décimal) | non | 0 |
+| `line_subtotal` | integer (FCFA) | non |  |
+| `line_tax` | integer (FCFA) | non |  |
+| `line_total` | integer (FCFA) | non |  |
+
+### Delivery
+
+Table `deliveries`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `number` | string(40) | non |  |
+| `order_id` | string (uuid) | non |  |
+| `supplier_company_id` | string (uuid) | non |  |
+| `buyer_company_id` | string (uuid) | non |  |
+| `delivery_no` | integer | non |  |
+| `status` | string(15) | non | expediee |
+| `note` | string | oui |  |
+| `carrier` | string(120) | oui |  |
+| `shipped_at` | string (date-heure ISO 8601) | non |  |
+| `document_id` | string (uuid) | oui |  |
+| `received_at` | string (date-heure ISO 8601) | oui |  |
+| `received_by` | string (uuid) | oui |  |
+| `reception_note` | string | oui |  |
+| `with_reserves` | boolean | non | false |
+| `created_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### DeliveryLine
+
+Table `delivery_lines`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `delivery_id` | string (uuid) | non |  |
+| `line_no` | integer | non |  |
+| `product_id` | string (uuid) | oui |  |
+| `reference` | string(60) | oui |  |
+| `name` | string(200) | non |  |
+| `unit` | string(12) | non |  |
+| `quantity` | string (décimal) | non |  |
+| `received_quantity` | string (décimal) | oui |  |
 
 ### Document
 
@@ -3391,6 +3543,14 @@ Table `invoices`.
 | `overdue_notified_at` | string (date-heure ISO 8601) | oui |  |
 | `cancelled_at` | string (date-heure ISO 8601) | oui |  |
 | `cancellation_reason` | string | oui |  |
+| `amount_credited` | integer (FCFA) | non | 0 |
+| `match_status` | string(10) | non | conforme |
+| `match_details` | objet / tableau JSON | oui |  |
+| `match_decided_at` | string (date-heure ISO 8601) | oui |  |
+| `match_decided_by` | string (uuid) | oui |  |
+| `match_comment` | string | oui |  |
+| `reminders_count` | integer | non | 0 |
+| `last_reminder_at` | string (date-heure ISO 8601) | oui |  |
 | `created_by` | string (uuid) | oui |  |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
@@ -3414,6 +3574,22 @@ Table `invoice_lines`.
 | `line_subtotal` | integer (FCFA) | non |  |
 | `line_tax` | integer (FCFA) | non |  |
 | `line_total` | integer (FCFA) | non |  |
+
+### InvoiceReminder
+
+Table `invoice_reminders`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | integer (FCFA) | oui |  |
+| `invoice_id` | string (uuid) | non |  |
+| `level` | smallint | non |  |
+| `channel` | string(10) | non |  |
+| `days_overdue` | integer | non |  |
+| `amount_due` | integer (FCFA) | non |  |
+| `emailed` | boolean | non | false |
+| `sent_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
 
 ### MemberInvitation
 
@@ -3495,8 +3671,35 @@ Table `orders`.
 | `completed_at` | string (date-heure ISO 8601) | oui |  |
 | `refused_at` | string (date-heure ISO 8601) | oui |  |
 | `cancelled_at` | string (date-heure ISO 8601) | oui |  |
+| `approval_status` | string(12) | non | non_requise |
+| `approvals_required` | smallint | non | 0 |
+| `approval_round` | integer | non | 0 |
+| `approval_requested_at` | string (date-heure ISO 8601) | oui |  |
+| `approval_requested_by` | string (uuid) | oui |  |
+| `approved_at` | string (date-heure ISO 8601) | oui |  |
+| `source_order_id` | string (uuid) | oui |  |
+| `purchase_list_id` | string (uuid) | oui |  |
+| `deliveries_count` | integer | non | 0 |
+| `backorder_closed_at` | string (date-heure ISO 8601) | oui |  |
+| `backorder_closed_by_side` | string(12) | oui |  |
+| `backorder_close_reason` | string | oui |  |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### OrderApproval
+
+Table `order_approvals`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `order_id` | string (uuid) | non |  |
+| `round` | integer | non |  |
+| `user_id` | string (uuid) | non |  |
+| `decision` | string(10) | non |  |
+| `comment` | string | oui |  |
+| `order_total` | integer (FCFA) | non |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
 
 ### OrderEvent
 
@@ -3543,6 +3746,10 @@ Table `order_lines`.
 | `substitute_for_line_no` | integer | oui |  |
 | `comment` | string(500) | oui |  |
 | `received_quantity` | string (décimal) | oui |  |
+| `base_unit_price` | integer (FCFA) | oui |  |
+| `discount_percent` | string (décimal) | non | 0 |
+| `delivered_quantity` | string (décimal) | non | 0 |
+| `stock_reserved` | string (décimal) | non | 0 |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 
 ### OrderVersion
@@ -3587,6 +3794,9 @@ Table `partnerships`.
 | `supplier_notes` | string | oui |  |
 | `suspended_by_company_id` | string (uuid) | oui |  |
 | `suspended_reason` | string | oui |  |
+| `price_list_id` | string (uuid) | oui |  |
+| `credit_limit` | integer (FCFA) | oui |  |
+| `block_on_overdue` | boolean | non | false |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
 
@@ -3668,6 +3878,35 @@ Table `platform_settings`.
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
 
+### PriceList
+
+Table `price_lists`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `company_id` | string (uuid) | non |  |
+| `name` | string(100) | non |  |
+| `description` | string | oui |  |
+| `discount_percent` | string (décimal) | non | 0 |
+| `is_active` | boolean | non | true |
+| `created_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### PriceListItem
+
+Table `price_list_items`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `price_list_id` | string (uuid) | non |  |
+| `product_id` | string (uuid) | non |  |
+| `price` | integer (FCFA) | non |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
 ### Product
 
 Table `products`.
@@ -3687,6 +3926,11 @@ Table `products`.
 | `availability` | string(15) | non | disponible |
 | `stock_quantity` | string (décimal) | oui |  |
 | `min_order_quantity` | string (décimal) | non | 1 |
+| `order_multiple` | string (décimal) | oui |  |
+| `max_order_quantity` | string (décimal) | oui |  |
+| `stock_reserved` | string (décimal) | non | 0 |
+| `low_stock_threshold` | string (décimal) | oui |  |
+| `low_stock_notified_at` | string (date-heure ISO 8601) | oui |  |
 | `is_active` | boolean | non | true |
 | `photo_document_id` | string (uuid) | oui |  |
 | `created_by` | string (uuid) | oui |  |
@@ -3706,6 +3950,48 @@ Table `product_categories`.
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
 
+### ProductPriceTier
+
+Table `product_price_tiers`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `product_id` | string (uuid) | non |  |
+| `min_quantity` | string (décimal) | non |  |
+| `discount_percent` | string (décimal) | non |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+
+### PurchaseList
+
+Table `purchase_lists`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `company_id` | string (uuid) | non |  |
+| `supplier_company_id` | string (uuid) | non |  |
+| `name` | string(100) | non |  |
+| `notes` | string | oui |  |
+| `last_ordered_at` | string (date-heure ISO 8601) | oui |  |
+| `created_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+| `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### PurchaseListItem
+
+Table `purchase_list_items`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | string (uuid) | oui |  |
+| `list_id` | string (uuid) | non |  |
+| `product_id` | string (uuid) | non |  |
+| `quantity` | string (décimal) | oui |  |
+| `par_level` | string (décimal) | oui |  |
+| `sort_order` | integer | non | 0 |
+| `created_at` | string (date-heure ISO 8601) | non |  |
+
 ### Role
 
 Table `roles`.
@@ -3719,6 +4005,24 @@ Table `roles`.
 | `is_system` | boolean | non | false |
 | `created_at` | string (date-heure ISO 8601) | non |  |
 | `updated_at` | string (date-heure ISO 8601) | non |  |
+
+### StockMovement
+
+Table `stock_movements`.
+
+| Champ | Type | Nullable | Défaut |
+|---|---|---|---|
+| `id` | integer (FCFA) | oui |  |
+| `company_id` | string (uuid) | non |  |
+| `product_id` | string (uuid) | non |  |
+| `type` | string(15) | non |  |
+| `quantity` | string (décimal) | non |  |
+| `stock_after` | string (décimal) | oui |  |
+| `reserved_after` | string (décimal) | non |  |
+| `order_id` | string (uuid) | oui |  |
+| `note` | string | oui |  |
+| `created_by` | string (uuid) | oui |  |
+| `created_at` | string (date-heure ISO 8601) | non |  |
 
 ### Subscription
 
@@ -3957,6 +4261,7 @@ Codes acceptés et renvoyés par l’API, avec leur libellé d’affichage. La m
 | `validee` | Commande validée |
 | `en_preparation` | En préparation |
 | `prete` | Prête |
+| `livree_partiellement` | Livrée partiellement |
 | `livree` | Livrée |
 | `reception_confirmee` | Réception confirmée |
 | `facturee` | Facturée |
@@ -4017,6 +4322,101 @@ Codes acceptés et renvoyés par l’API, avec leur libellé d’affichage. La m
 | `cloture` | Commande terminée |
 | `piece_jointe` | Pièce jointe |
 | `commentaire` | Commentaire |
+| `soumission_approbation` | Soumission à approbation interne |
+| `approbation` | Approbation interne |
+| `rejet_approbation` | Rejet de l’approbation interne |
+| `livraison_partielle` | Livraison partielle |
+| `reception_partielle` | Réception d’une livraison |
+| `reliquat_solde` | Reliquat soldé |
+| `litige` | Litige |
+| `avoir` | Avoir |
+
+### `EVENEMENTS_INTERNES_ACHETEUR`
+
+| Code | Libellé |
+|---|---|
+| `0` | creation |
+| `1` | modification |
+| `2` | soumission_approbation |
+| `3` | approbation |
+| `4` | rejet_approbation |
+
+### `STATUT_APPROBATION`
+
+| Code | Libellé |
+|---|---|
+| `non_requise` | Approbation non requise |
+| `en_attente` | En attente d’approbation |
+| `approuvee` | Approuvée |
+| `rejetee` | Rejetée |
+
+### `DECISION_APPROBATION`
+
+| Code | Libellé |
+|---|---|
+| `approuvee` | Approuvée |
+| `rejetee` | Rejetée |
+
+### `STATUT_LIVRAISON`
+
+| Code | Libellé |
+|---|---|
+| `expediee` | Expédiée |
+| `receptionnee` | Réceptionnée |
+
+### `TYPE_LITIGE`
+
+| Code | Libellé |
+|---|---|
+| `manquant` | Produit manquant |
+| `endommage` | Produit endommagé |
+| `non_conforme` | Produit non conforme |
+| `erreur_produit` | Erreur de produit |
+| `perime` | Produit périmé |
+| `autre` | Autre |
+
+### `STATUT_LITIGE`
+
+| Code | Libellé |
+|---|---|
+| `ouvert` | Ouvert |
+| `accepte` | Accepté (avoir émis) |
+| `refuse` | Refusé |
+| `annule` | Annulé |
+
+### `STATUT_AVOIR`
+
+| Code | Libellé |
+|---|---|
+| `emis` | Émis |
+| `annule` | Annulé |
+
+### `STATUT_RAPPROCHEMENT`
+
+| Code | Libellé |
+|---|---|
+| `conforme` | Conforme |
+| `ecart` | Écart à valider |
+| `accepte` | Écart accepté |
+| `conteste` | Contestée |
+
+### `TYPE_MOUVEMENT_STOCK`
+
+| Code | Libellé |
+|---|---|
+| `entree` | Entrée en stock |
+| `ajustement` | Ajustement d’inventaire |
+| `reservation` | Réservation (commande validée) |
+| `liberation` | Libération de réservation |
+| `sortie` | Sortie (livraison) |
+| `retour` | Retour client |
+
+### `CANAL_RELANCE`
+
+| Code | Libellé |
+|---|---|
+| `auto` | Automatique |
+| `manuel` | Manuelle |
 
 ### `STATUT_FACTURE`
 
@@ -4093,6 +4493,7 @@ Codes acceptés et renvoyés par l’API, avec leur libellé d’affichage. La m
 | `company` | Entreprise |
 | `product` | Produit |
 | `order` | Commande |
+| `claim` | Litige |
 | `invoice` | Facture |
 | `payment` | Paiement |
 | `document_template` | Modèle de document |
@@ -4134,6 +4535,15 @@ Codes acceptés et renvoyés par l’API, avec leur libellé d’affichage. La m
 | `partenariat` | Partenariat |
 | `commentaire` | Nouveau message |
 | `abonnement` | Abonnement |
+| `approbation_requise` | Approbation requise |
+| `commande_approuvee` | Commande approuvée |
+| `approbation_rejetee` | Approbation rejetée |
+| `livraison_partielle` | Livraison partielle |
+| `litige` | Litige |
+| `avoir` | Avoir |
+| `facture_ecart` | Écart de facturation |
+| `relance_facture` | Relance de facture |
+| `stock_bas` | Stock bas |
 | `systeme` | Information |
 
 ### `STATUT_ABONNEMENT`

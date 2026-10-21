@@ -46,6 +46,8 @@ describe('Listes de prix (tarif client / groupe de clients)', () => {
     expect(commande.subtotal).toBe(2 * 14000 + 4 * 2250);
 
     // Le détail de la liste montre ses clients ; la liste n'est visible que du fournisseur.
+    const toutes = await api().get('/api/v1/listes-prix').set(rc.fournisseur.h);
+    expect(toutes.body.data.price_lists).toEqual([expect.objectContaining({ id: liste.id, clients_count: 1, items_count: 1 })]);
     const detail = await api().get(`/api/v1/listes-prix/${liste.id}`).set(rc.fournisseur.h);
     expect(detail.body.data.price_list.clients).toHaveLength(1);
     const partenariatVuClient = await api().get(`/api/v1/partenariats/${rc.partenariat.id}`).set(rc.acheteur.h);

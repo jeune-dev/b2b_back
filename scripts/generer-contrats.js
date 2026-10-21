@@ -524,9 +524,13 @@ const TITRES_ADMIN = {
 
 const AUTH_ADMIN = /^\/api\/v1\/auth\/(connexion|mfa|refresh|deconnexion)$/;
 const entreprise = {
-  titre: 'Contrat d’API — Application Pro2Link (web et mobile, acheteurs et fournisseurs)',
-  intro: '**Périmètre :** les {TOTAL} routes utilisées par l’application web et mobile des entreprises : authentification, compte, notifications, référentiels, réseau de partenaires, catalogue, bons de commande (côté acheteur `/achats` et côté fournisseur `/ventes`), facturation, paiements, dettes et créances, tableaux de bord, statistiques, modèles de documents, abonnement et synchronisation temps réel. Le back-office super admin est décrit dans `CONTRAT-API-ADMIN.md` ; les webhooks (PayDunya) sont appelés par le fournisseur de paiement, jamais par l’application.',
-  conventions: CONVENTIONS(true),
+  titre: 'Contrat d’API — Application mobile Pro2Link (entreprises acheteuses et fournisseurs)',
+  intro: '**Périmètre :** les {TOTAL} routes utilisées par l’application mobile des entreprises — et par leur espace web, qui appelle les mêmes routes (voir « Application web des entreprises » en section 0) : authentification, compte, notifications, référentiels, réseau de partenaires, catalogue (listes de prix, stock, import CSV), bons de commande (côté acheteur `/achats`, côté fournisseur `/ventes`, approbation interne, livraisons partielles), listes d’achat, litiges et avoirs, facturation et rapprochement, paiements, dettes et créances, tableaux de bord, statistiques et exports comptables, modèles de documents, abonnement et synchronisation temps réel. Le back-office super admin est décrit dans `CONTRAT-API-ADMIN.md` ; les webhooks (PayDunya) sont appelés par le fournisseur de paiement, jamais par l’application.',
+  conventions: `${CONVENTIONS(false)}
+
+### Application web des entreprises
+
+L’espace web des entreprises (§ 21) appelle EXACTEMENT les mêmes routes que le mobile. Une seule différence : dans un navigateur (requête portant un en-tête \`Origin\`), le refresh token n’est **jamais** dans le corps des réponses ; il est posé en cookie httpOnly \`SameSite=Strict\` (\`refresh_token\`), les appels d’authentification partent en \`credentials: "include"\` et \`POST /api/v1/auth/refresh\` s’appelle **sans corps**.`,
   parcours: `## 0 bis. Parcours de l’application
 
 ### Démarrage
@@ -540,17 +544,18 @@ const entreprise = {
 1. Inscription \`POST /auth/inscription\` (compte administrateur + entreprise + essai gratuit) → connexion.
 2. Inviter ses collaborateurs (\`POST /utilisateurs/invitations\`) avec un rôle interne.
 3. Réseau : chercher dans \`GET /annuaire\` et demander un partenariat, ou inviter un fournisseur absent de la plateforme.
-4. Consulter \`GET /catalogues/:supplierId/produits\` → créer un bon de commande \`POST /achats\` (brouillon) → \`POST /achats/:id/envoyer\`.
-5. Le fournisseur modifie ? Examiner la proposition (versions, écarts ligne à ligne) → \`POST /achats/:id/accepter-proposition\` ou \`/refuser-proposition\`.
-6. À la livraison : \`POST /achats/:id/confirmer-reception\` (quantités reçues, réserves éventuelles).
-7. Facture reçue → enregistrer un paiement \`POST /paiements\` (**Idempotency-Key**) → \`GET /situation/dettes\`.
+4. Consulter \`GET /catalogues/:supplierId/produits\` (SES prix : liste de prix, paliers) → créer un bon de commande \`POST /achats\` (brouillon) — ou plus vite : \`POST /achats/:id/recommander\`, \`POST /listes-achat/:id/commander\`, \`POST /achats/import\` (CSV) — → \`POST /achats/:id/envoyer\`.
+5. Au-delà d’un seuil d’approbation, l’envoi SOUMET le bon (\`submitted_for_approval: true\`) : un approbateur \`GET /achats/approbations\` → \`POST /achats/:id/approuver\` (envoi automatique) ou \`/rejeter-approbation\`. Refus possibles à l’envoi : \`MINIMUM_COMMANDE\`, \`PLAFOND_CREDIT_DEPASSE\`, \`RETARD_DE_PAIEMENT\`.
+6. Le fournisseur modifie ? Examiner la proposition (versions, écarts ligne à ligne) → \`POST /achats/:id/accepter-proposition\` ou \`/refuser-proposition\`.
+7. Livraisons (une ou plusieurs) : \`POST /achats/:id/livraisons/:livraisonId/reception\` ou \`POST /achats/:id/confirmer-reception\` (quantités reçues, réserves) ; renoncer au reste : \`/solder-reliquat\`. Problème constaté : \`POST /litiges\` (photos : \`/litiges/:id/pieces-jointes\`).
+8. Facture reçue : si \`payment_blocked\` (écart de rapprochement) → \`POST /factures/:id/accepter-ecart\` ou \`/contester\` ; sinon enregistrer un paiement \`POST /paiements\` (**Idempotency-Key**) → \`GET /situation/dettes\` (avoirs déduits).
 
 ### Fournisseur (§ 28)
-1. Créer son catalogue (\`POST /produits\`, catégories, photos).
-2. Recevoir la commande (\`GET /ventes\`, notification push + temps réel) → \`POST /ventes/:id/accepter\`, \`/refuser\` ou \`/proposer\` (proposition modifiée : quantités, produit retiré ou remplacé, indisponibilité).
-3. Préparer (\`POST /ventes/:id/statut\` : en préparation, prête) puis livrer (\`POST /ventes/:id/livrer\`, bon de livraison en pièce jointe).
-4. Émettre la facture (\`POST /factures\`, PDF selon son modèle de document) → confirmer le paiement déclaré par l’acheteur.
-5. Suivi : \`GET /tableau-de-bord\`, \`GET /situation/creances\`, \`GET /statistiques/ventes\`.`,
+1. Créer son catalogue (\`POST /produits\` ou \`POST /produits/import\` en CSV ; paliers de remise, minimum / multiple, stock \`POST /produits/:id/stock\`) ; tarifs clients : \`POST /listes-prix\` puis \`PATCH /partenariats/:id\` (\`price_list_id\`, \`credit_limit\`).
+2. Recevoir la commande (\`GET /ventes\`, notification push + temps réel) → \`POST /ventes/:id/accepter\` (refusé en \`STOCK_INSUFFISANT\` si le stock suivi manque), \`/refuser\` ou \`/proposer\` (proposition modifiée : quantités, produit retiré ou remplacé, indisponibilité).
+3. Préparer (\`POST /ventes/:id/statut\` : en préparation, prête) puis livrer : tout (\`POST /ventes/:id/livrer\`) ou en plusieurs fois (\`POST /ventes/:id/livraisons\`) ; bon de livraison PDF \`GET …/livraisons/:livraisonId/bon-de-livraison.pdf\`.
+4. Émettre la facture (\`POST /factures\`, PDF selon son modèle de document) → confirmer le paiement déclaré par l’acheteur ; relancer un impayé \`POST /factures/:id/relancer\` ; litige reçu → \`POST /litiges/:id/accepter\` (avoir automatique) ou \`/refuser\`.
+5. Suivi : \`GET /tableau-de-bord\`, \`GET /situation/creances\`, \`GET /statistiques/ventes\`, export comptable \`GET /statistiques/exports/journal_ventes.csv\`.`,
   sections: [
     { titre: 'Authentification', routes: prendre((r) => seg(r, 3) === 'auth') },
     { titre: 'Compte connecté (profil, sécurité, sessions, appareils)', routes: prendre((r) => seg(r, 3) === 'compte') },
@@ -564,7 +569,7 @@ const entreprise = {
 
 const admin = {
   titre: 'Contrat d’API — Back-office Super Admin Pro2Link',
-  intro: '**Périmètre :** les {TOTAL} routes du back-office web : routes d’administration (`/admin/*`, rôle `super_admin`), plus la connexion (avec **double authentification obligatoire**), le compte connecté et les notifications de l’administrateur. L’application des entreprises est décrite dans `CONTRAT-API-ENTREPRISE.md`.',
+  intro: '**Périmètre :** les {TOTAL} routes du back-office web : routes d’administration (`/admin/*`, rôle `super_admin`), plus la connexion (avec **double authentification obligatoire**), le compte connecté et les notifications de l’administrateur. L’application des entreprises est décrite dans `CONTRAT-API-MOBILE.md`.',
   conventions: `${CONVENTIONS(true)}
 
 ### Spécificités super admin
@@ -585,7 +590,7 @@ const admin = {
   exclusEnums: new Set(),
 };
 
-for (const [fichier, contrat] of [['CONTRAT-API-ENTREPRISE.md', entreprise], ['CONTRAT-API-ADMIN.md', admin]]) {
+for (const [fichier, contrat] of [['CONTRAT-API-MOBILE.md', entreprise], ['CONTRAT-API-ADMIN.md', admin]]) {
   contrat.sections = contrat.sections.filter((s) => s.routes.length);
   fs.writeFileSync(path.join(RACINE, 'docs', fichier), document(contrat));
   const n = contrat.sections.reduce((t, s) => t + s.routes.length, 0);

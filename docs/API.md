@@ -1,8 +1,8 @@
 # Référence de l'API — /api/v1
 
-Générée depuis le routeur réel : `npm run doc:routes` (168 routes). Le détail
+Générée depuis le routeur réel : `npm run doc:routes` (215 routes). Le détail
 de chaque route (corps, réponses, permissions, exemples réels) est dans
-[CONTRAT-API-ENTREPRISE.md](CONTRAT-API-ENTREPRISE.md) et
+[CONTRAT-API-MOBILE.md](CONTRAT-API-MOBILE.md) et
 [CONTRAT-API-ADMIN.md](CONTRAT-API-ADMIN.md).
 
 ## Conventions
@@ -33,6 +33,18 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 | Commande modifiée entre-temps (révision dépassée) | **409 COMMANDE_MODIFIEE** — recharger |
 | Limite du forfait (utilisateurs, produits, partenaires, commandes / mois) | **403 LIMITE_ABONNEMENT** |
 | Fonctionnalité hors forfait (modèles de documents, statistiques, exports) | **403 FONCTIONNALITE_NON_INCLUSE** |
+| Bon de commande sous le montant minimum du fournisseur | **422 MINIMUM_COMMANDE** |
+| Encours + commande au-delà du plafond de crédit ; facture échue avec blocage activé | **409 PLAFOND_CREDIT_DEPASSE** ; **409 RETARD_DE_PAIEMENT** |
+| Envoi d'un bon au-delà d'un seuil d'approbation | 200, `submitted_for_approval: true` (le bon part à la dernière approbation) |
+| Approbation par l'auteur du bon ; approbateurs trop peu nombreux | **403 APPROBATION_PAR_AUTEUR** ; **409 APPROBATEURS_INSUFFISANTS** |
+| Quantité hors minimum / multiple / maximum du produit | **422 LIGNES_INVALIDES** (détail par ligne) |
+| Validation d'une commande au-delà du stock suivi disponible | **409 STOCK_INSUFFISANT** (détail par ligne) |
+| Livraison au-delà du reste à livrer ; plus rien à livrer | **422 LIVRAISON_INVALIDE** ; **409 RIEN_A_LIVRER** |
+| Litige au-delà de la quantité reçue non contestée ; commande non livrée | **422 LITIGE_INVALIDE** ; **409 COMMANDE_NON_LIVREE** |
+| Facture en écart de rapprochement : paiement ou relance | imputation refusée (**422 IMPUTATION_INVALIDE**), `payment_blocked: true` ; **409 FACTURE_BLOQUEE** |
+| Avoirs d'une facture au-delà de son montant | **422 AVOIR_EXCESSIF** |
+| Relance manuelle moins de 24 h après la précédente | **409 RELANCE_RECENTE** |
+| Import CSV invalide (commande ou catalogue) | **422 IMPORT_INVALIDE** (une erreur par ligne du fichier, rien n'est écrit) |
 | Abonnement échu ou suspendu, toute écriture | **402 ABONNEMENT_REQUIS** |
 | Retirer le dernier administrateur de l'entreprise | **409 DERNIER_ADMINISTRATEUR** |
 | Supprimer une catégorie qui contient des produits | **409 CATEGORIE_NON_VIDE** |
@@ -180,6 +192,10 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 |---|---|
 | GET | `/api/v1/produits/` |
 | POST | `/api/v1/produits/` |
+| GET | `/api/v1/produits/export.csv` |
+| GET | `/api/v1/produits/import/modele.csv` |
+| POST | `/api/v1/produits/import` |
+| GET | `/api/v1/produits/stock/alertes` |
 | GET | `/api/v1/produits/:id` |
 | PATCH | `/api/v1/produits/:id` |
 | PATCH | `/api/v1/produits/:id/prix` |
@@ -188,6 +204,8 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 | POST | `/api/v1/produits/:id/desactiver` |
 | POST | `/api/v1/produits/:id/photo` |
 | DELETE | `/api/v1/produits/:id/photo` |
+| POST | `/api/v1/produits/:id/stock` |
+| GET | `/api/v1/produits/:id/mouvements-stock` |
 | DELETE | `/api/v1/produits/:id` |
 
 ### categories-produits
@@ -207,23 +225,53 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 | GET | `/api/v1/catalogues/:supplierId/produits/:id` |
 | GET | `/api/v1/catalogues/:supplierId/categories` |
 
+### listes-prix
+
+| Méthode | Chemin |
+|---|---|
+| GET | `/api/v1/listes-prix/` |
+| POST | `/api/v1/listes-prix/` |
+| GET | `/api/v1/listes-prix/:id` |
+| PATCH | `/api/v1/listes-prix/:id` |
+| DELETE | `/api/v1/listes-prix/:id` |
+
+### listes-achat
+
+| Méthode | Chemin |
+|---|---|
+| GET | `/api/v1/listes-achat/` |
+| POST | `/api/v1/listes-achat/` |
+| GET | `/api/v1/listes-achat/:id` |
+| PATCH | `/api/v1/listes-achat/:id` |
+| DELETE | `/api/v1/listes-achat/:id` |
+| POST | `/api/v1/listes-achat/:id/commander` |
+
 ### achats
 
 | Méthode | Chemin |
 |---|---|
 | GET | `/api/v1/achats/` |
 | POST | `/api/v1/achats/` |
+| POST | `/api/v1/achats/import` |
+| GET | `/api/v1/achats/approbations` |
 | GET | `/api/v1/achats/:id` |
 | PATCH | `/api/v1/achats/:id` |
 | GET | `/api/v1/achats/:id/versions` |
 | GET | `/api/v1/achats/:id/historique` |
 | GET | `/api/v1/achats/:id/bon-de-commande.pdf` |
 | POST | `/api/v1/achats/:id/envoyer` |
+| POST | `/api/v1/achats/:id/approuver` |
+| POST | `/api/v1/achats/:id/rejeter-approbation` |
+| POST | `/api/v1/achats/:id/recommander` |
 | POST | `/api/v1/achats/:id/accepter-proposition` |
 | POST | `/api/v1/achats/:id/refuser-proposition` |
 | POST | `/api/v1/achats/:id/demander-modification` |
 | POST | `/api/v1/achats/:id/annuler` |
 | POST | `/api/v1/achats/:id/confirmer-reception` |
+| GET | `/api/v1/achats/:id/livraisons` |
+| POST | `/api/v1/achats/:id/livraisons/:livraisonId/reception` |
+| GET | `/api/v1/achats/:id/livraisons/:livraisonId/bon-de-livraison.pdf` |
+| POST | `/api/v1/achats/:id/solder-reliquat` |
 | POST | `/api/v1/achats/:id/commentaires` |
 | POST | `/api/v1/achats/:id/pieces-jointes` |
 
@@ -242,6 +290,11 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 | POST | `/api/v1/ventes/:id/refuser` |
 | POST | `/api/v1/ventes/:id/statut` |
 | POST | `/api/v1/ventes/:id/livrer` |
+| GET | `/api/v1/ventes/:id/livraisons` |
+| POST | `/api/v1/ventes/:id/livraisons` |
+| POST | `/api/v1/ventes/:id/livraisons/:livraisonId/document` |
+| GET | `/api/v1/ventes/:id/livraisons/:livraisonId/bon-de-livraison.pdf` |
+| POST | `/api/v1/ventes/:id/solder-reliquat` |
 | POST | `/api/v1/ventes/:id/annuler` |
 | POST | `/api/v1/ventes/:id/commentaires` |
 | POST | `/api/v1/ventes/:id/pieces-jointes` |
@@ -255,6 +308,32 @@ de chaque route (corps, réponses, permissions, exemples réels) est dans
 | GET | `/api/v1/factures/:id` |
 | GET | `/api/v1/factures/:id/pdf` |
 | POST | `/api/v1/factures/:id/annuler` |
+| POST | `/api/v1/factures/:id/accepter-ecart` |
+| POST | `/api/v1/factures/:id/contester` |
+| GET | `/api/v1/factures/:id/relances` |
+| POST | `/api/v1/factures/:id/relancer` |
+
+### avoirs
+
+| Méthode | Chemin |
+|---|---|
+| GET | `/api/v1/avoirs/` |
+| POST | `/api/v1/avoirs/` |
+| GET | `/api/v1/avoirs/:id` |
+| GET | `/api/v1/avoirs/:id/pdf` |
+| POST | `/api/v1/avoirs/:id/annuler` |
+
+### litiges
+
+| Méthode | Chemin |
+|---|---|
+| GET | `/api/v1/litiges/` |
+| POST | `/api/v1/litiges/` |
+| GET | `/api/v1/litiges/:id` |
+| POST | `/api/v1/litiges/:id/accepter` |
+| POST | `/api/v1/litiges/:id/refuser` |
+| POST | `/api/v1/litiges/:id/annuler` |
+| POST | `/api/v1/litiges/:id/pieces-jointes` |
 
 ### paiements
 

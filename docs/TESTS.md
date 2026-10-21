@@ -6,8 +6,8 @@ HTTP, **le contenu de la réponse, l'état de la base et les effets de bord**
 (montants, statuts, versions et historique des commandes, imputations des
 paiements, journal d'audit, notifications, événements temps réel, fichiers).
 
-État de référence : **36 fichiers, 906 tests, 172 routes sur 172 appelées**,
-couverture ≈ 91 % des instructions, 76 % des branches, 91 % des fonctions,
+État de référence : **43 fichiers, 1 062 tests, 219 routes sur 219 appelées**,
+couverture ≈ 92 % des instructions, 78 % des branches, 92 % des fonctions,
 94 % des lignes (seuils bloquants dans `jest.config.js`).
 
 ## 1. Organisation
@@ -88,7 +88,7 @@ sécurité ; `npm run test:routes` signale toute route jamais appelée.
 
 `npm run doc:contrats:capture` rejoue la suite en enregistrant une vraie
 requête et sa réponse par route (`CONTRAT_CAPTURE=1`), puis régénère
-`docs/CONTRAT-API-ENTREPRISE.md` et `docs/CONTRAT-API-ADMIN.md`.
+`docs/CONTRAT-API-MOBILE.md` et `docs/CONTRAT-API-ADMIN.md`.
 
 ## 6. Règles d'écriture
 

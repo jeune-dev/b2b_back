@@ -15,9 +15,11 @@ sécurité, supervision, déploiement).
 |---|---|
 | [docs/ANALYSE_CAHIER_DES_CHARGES.md](docs/ANALYSE_CAHIER_DES_CHARGES.md) | Traçabilité cahier des charges → modules, tables, routes, rôles ; fonctionnalités complémentaires (§ 6) |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Règles d'écriture du code (accès multi-entreprise, transactions, audit, tests) |
-| [docs/API.md](docs/API.md) | Référence des 172 routes, générée depuis le code |
-| [docs/CONTRAT-API-ENTREPRISE.md](docs/CONTRAT-API-ENTREPRISE.md) | Contrat détaillé pour les applications web et mobile (exemples réels) |
-| [docs/CONTRAT-API-ADMIN.md](docs/CONTRAT-API-ADMIN.md) | Contrat détaillé du back-office Super Admin |
+| [docs/API.md](docs/API.md) | Référence des 219 routes, générée depuis le code |
+| [docs/CONTRAT-API-MOBILE.md](docs/CONTRAT-API-MOBILE.md) | Contrat détaillé de l'application des entreprises — mobile, et web (mêmes routes) — exemples réels |
+| [docs/CONTRAT-API-ADMIN.md](docs/CONTRAT-API-ADMIN.md) | Contrat détaillé du back-office Super Admin (web) |
+| [docs/CHARTE-GRAPHIQUE-MOBILE.md](docs/CHARTE-GRAPHIQUE-MOBILE.md) | Charte graphique de l'application mobile (thème Flutter prêt à copier) |
+| [docs/CHARTE-GRAPHIQUE-ADMIN.md](docs/CHARTE-GRAPHIQUE-ADMIN.md) | Charte graphique des applications web (thème CSS / Tailwind / TypeScript prêt à copier) |
 | [docs/TESTS.md](docs/TESTS.md) | Stratégie de tests |
 | [docs/EXPLOITATION.md](docs/EXPLOITATION.md) | Serveur, nginx, Redis, sauvegardes chiffrées, restauration |
 
@@ -146,11 +148,11 @@ exécution (une base clonée par worker).
 ```bash
 npm test                      # tout (unit + integration + e2e)
 npm run test:coverage         # avec couverture (seuils bloquants)
-npm run test:routes           # routes appelées par les tests (172 / 172)
+npm run test:routes           # routes appelées par les tests (219 / 219)
 npm run test:ordre-aleatoire  # preuve d'indépendance des tests
 ```
 
-36 fichiers / 906 tests : authentification, double authentification et
+43 fichiers / 1 062 tests : authentification, double authentification et
 sessions, inscription et collaborateurs, isolation entre entreprises,
 permissions de chaque rôle interne, partenariats et catalogue, cycle complet
 des commandes (propositions, versions, révisions concurrentes), facturation

@@ -1,16 +1,21 @@
 'use strict';
 
 const { Op } = require('sequelize');
+const sequelize = require('../../../config/db.js');
 const { Product, OrderVersion, OrderLine } = require('../../../models/index.js');
 const { ValidationError } = require('../../../errors/AppError.js');
-const { montantLigne, totaliser } = require('../../../utils/montants.js');
+const { montantLigne, totaliser, formatQuantite } = require('../../../utils/montants.js');
+const tarification = require('../../catalogue/service/tarification.service.js');
 
 /**
  * Construction des lignes d'une version de commande.
  *
  * Chaque ligne est un INSTANTANÉ du produit (référence, désignation, unité,
  * prix HT, TVA) : modifier le catalogue ne réécrit jamais une commande. Les
- * montants sont calculés ici, côté serveur — jamais reçus du client.
+ * montants sont calculés ici, côté serveur — jamais reçus du client — au PRIX
+ * DU CLIENT : liste de prix de son partenariat, puis remise par palier de
+ * quantité (`base_unit_price` : prix avant palier, `discount_percent` : remise
+ * de palier appliquée).
  */
 
 /**
@@ -31,9 +36,79 @@ async function produitsDuFournisseur(supplierId, ids, transaction) {
   return parId;
 }
 
-/** Ligne calculée à partir d'un produit du catalogue. */
-function ligneDepuisProduit(produit, { quantite, prixUnitaire = null, commentaire = null }) {
-  const prix = prixUnitaire ?? Number(produit.price);
+/**
+ * Saisie rapide : produits désignés par leur RÉFÉRENCE fournisseur (sans
+ * distinction de casse), résolus en une requête.
+ * @returns {Promise<Map<string, object>>} référence en minuscules → produit actif
+ */
+async function produitsParReference(supplierId, references, transaction) {
+  const uniques = [...new Set(references.filter(Boolean).map((r) => r.trim().toLowerCase()))];
+  if (!uniques.length) return new Map();
+  const produits = await Product.findAll({
+    where: {
+      company_id: supplierId,
+      is_active: true,
+      [Op.and]: [sequelize.where(sequelize.fn('lower', sequelize.col('reference')), { [Op.in]: uniques })],
+    },
+    attributes: ['id', 'reference'],
+    transaction,
+  });
+  return new Map(produits.map((p) => [p.reference.toLowerCase(), p]));
+}
+
+/**
+ * Remplace la référence d'une saisie par l'identifiant du produit.
+ * @param {Array<{ product_id?: string, reference?: string }>} saisies
+ */
+async function resoudreReferences(supplierId, saisies, transaction) {
+  if (!saisies.some((s) => s.reference)) return saisies;
+  const parRef = await produitsParReference(supplierId, saisies.map((s) => s.reference), transaction);
+  const erreurs = [];
+  const resolues = saisies.map((s, i) => {
+    if (!s.reference) return s;
+    const p = parRef.get(s.reference.trim().toLowerCase());
+    if (!p) {
+      erreurs.push(`Ligne ${i + 1} : référence « ${s.reference} » introuvable dans le catalogue de ce fournisseur`);
+      return s;
+    }
+    const { reference, ...reste } = s;
+    return { ...reste, product_id: p.id };
+  });
+  if (erreurs.length) throw new ValidationError('Données invalides', erreurs, 'REFERENCE_INCONNUE');
+  return resolues;
+}
+
+/** Quantité exprimée en millièmes (3 décimales) : comparaisons exactes. */
+const milliemes = (v) => Math.round(Number(v) * 1000);
+
+/**
+ * Règles de quantité du fournisseur pour un produit : minimum, multiple
+ * (« par carton de 12 »), maximum par commande.
+ * @returns {string[]} erreurs lisibles
+ */
+function erreursQuantite(produit, quantite, libelle) {
+  const erreurs = [];
+  if (quantite < Number(produit.min_order_quantity)) {
+    erreurs.push(`${libelle} : quantité minimale de commande pour « ${produit.name} » : ${formatQuantite(produit.min_order_quantity)}`);
+  }
+  if (produit.order_multiple && milliemes(quantite) % milliemes(produit.order_multiple) !== 0) {
+    erreurs.push(`${libelle} : « ${produit.name} » se commande par multiples de ${formatQuantite(produit.order_multiple)}`);
+  }
+  if (produit.max_order_quantity && quantite > Number(produit.max_order_quantity)) {
+    erreurs.push(`${libelle} : quantité maximale par commande pour « ${produit.name} » : ${formatQuantite(produit.max_order_quantity)}`);
+  }
+  return erreurs;
+}
+
+/**
+ * Ligne calculée à partir d'un produit du catalogue.
+ * @param {{ quantite: number, tarif?: { base_unit_price: number, discount_percent: number, unit_price: number }, prixUnitaire?: number|null, commentaire?: string|null }} o
+ *   `prixUnitaire` (fixé par le fournisseur) prime sur le tarif.
+ */
+function ligneDepuisProduit(produit, {
+  quantite, tarif = null, prixUnitaire = null, commentaire = null,
+}) {
+  const prix = prixUnitaire ?? tarif?.unit_price ?? Number(produit.price);
   const taux = Number(produit.tax_rate);
   const m = montantLigne({ quantite, prixUnitaire: prix, tauxTva: taux });
   return {
@@ -43,6 +118,8 @@ function ligneDepuisProduit(produit, { quantite, prixUnitaire = null, commentair
     unit: produit.unit,
     quantity: quantite,
     unit_price: prix,
+    base_unit_price: prixUnitaire === null ? (tarif?.base_unit_price ?? prix) : prix,
+    discount_percent: prixUnitaire === null ? (tarif?.discount_percent || 0) : 0,
     tax_rate: taux,
     line_subtotal: m.sousTotal,
     line_tax: m.tva,
@@ -59,21 +136,30 @@ function recalculer(ligne, { quantite = Number(ligne.quantity), prixUnitaire = N
 
 /**
  * § 9.1 — lignes du bon de commande saisies par l'acheteur : produits du
- * catalogue et quantités. Un produit en rupture n'est pas commandable ; la
- * quantité minimale de commande est respectée ; un produit n'apparaît qu'une fois.
- * @param {Array<{ product_id: string, quantity: number, comment?: string }>} saisies
+ * catalogue (par identifiant ou par RÉFÉRENCE) et quantités. Un produit en
+ * rupture n'est pas commandable ; minimum, multiple et maximum sont
+ * respectés ; un produit n'apparaît qu'une fois.
+ * @param {Array<{ product_id?: string, reference?: string, quantity: number, comment?: string }>} saisies
  */
-async function lignesAcheteur(supplierId, saisies, transaction) {
-  const produits = await produitsDuFournisseur(supplierId, saisies.map((s) => s.product_id), transaction);
+async function lignesAcheteur(supplierId, buyerId, saisies, transaction) {
+  const resolues = await resoudreReferences(supplierId, saisies, transaction);
+  const ids = resolues.map((s) => s.product_id);
+  const produits = await produitsDuFournisseur(supplierId, ids, transaction);
+  const ctx = await tarification.contexte(supplierId, buyerId, ids, transaction);
   const erreurs = [];
   const vus = new Set();
-  const lignes = saisies.map((s, i) => {
+  const lignes = resolues.map((s, i) => {
     const p = produits.get(s.product_id);
-    if (vus.has(s.product_id)) erreurs.push(`Ligne ${i + 1} : le produit « ${p.name} » figure déjà dans le bon de commande`);
+    const libelle = `Ligne ${i + 1}`;
+    if (vus.has(s.product_id)) erreurs.push(`${libelle} : le produit « ${p.name} » figure déjà dans le bon de commande`);
     vus.add(s.product_id);
-    if (p.availability === 'rupture') erreurs.push(`Ligne ${i + 1} : « ${p.name} » est indisponible chez le fournisseur`);
-    if (s.quantity < Number(p.min_order_quantity)) erreurs.push(`Ligne ${i + 1} : quantité minimale de commande pour « ${p.name} » : ${Number(p.min_order_quantity)}`);
-    return { ...ligneDepuisProduit(p, { quantite: s.quantity, commentaire: s.comment || null }), line_no: i + 1, change_type: 'inchangee' };
+    if (p.availability === 'rupture') erreurs.push(`${libelle} : « ${p.name} » est indisponible chez le fournisseur`);
+    erreurs.push(...erreursQuantite(p, s.quantity, libelle));
+    return {
+      ...ligneDepuisProduit(p, { quantite: s.quantity, tarif: tarification.prixPour(p, ctx, s.quantity), commentaire: s.comment || null }),
+      line_no: i + 1,
+      change_type: 'inchangee',
+    };
   });
   if (erreurs.length) throw new ValidationError('Données invalides', erreurs, 'LIGNES_INVALIDES');
   return lignes;
@@ -91,13 +177,23 @@ async function lignesAcheteur(supplierId, saisies, transaction) {
  *     REMPLACEMENT d'une ligne (`substitute_for_line_no`, fournisseur).
  * Les lignes non citées sont reprises telles quelles.
  *
+ * Quand la quantité d'une ligne change, son prix suit les paliers de remise —
+ * sauf si le fournisseur avait négocié un prix propre sur cette ligne (prix
+ * différent du tarif) : ce prix est conservé.
+ *
  * @param {Array<object>} lignesCourantes  lignes SIMPLES (get({ plain: true })) de la version courante
  * @param {'acheteur'|'fournisseur'} cote
  * @returns {Promise<Array<object>>} lignes de la nouvelle version
  */
-async function lignesModifiees(supplierId, lignesCourantes, saisies, cote, transaction) {
+async function lignesModifiees(supplierId, buyerId, lignesCourantes, saisies, cote, transaction) {
   const parNumero = new Map(lignesCourantes.map((l) => [l.line_no, l]));
   const produits = await produitsDuFournisseur(supplierId, saisies.filter((s) => !s.line_no).map((s) => s.product_id), transaction);
+  // Produits des lignes existantes dont la quantité change (paliers) — même désactivés depuis.
+  const idsExistants = saisies.filter((s) => s.line_no && s.quantity !== undefined).map((s) => parNumero.get(s.line_no)?.product_id).filter(Boolean);
+  const existants = idsExistants.length
+    ? new Map((await Product.findAll({ where: { id: { [Op.in]: [...new Set(idsExistants)] }, company_id: supplierId }, transaction, paranoid: false })).map((p) => [p.id, p]))
+    : new Map();
+  const ctx = await tarification.contexte(supplierId, buyerId, [...produits.keys(), ...existants.keys()], transaction);
   const erreurs = [];
   const modifiees = new Map();
   const ajoutees = [];
@@ -120,15 +216,28 @@ async function lignesModifiees(supplierId, lignesCourantes, saisies, cote, trans
         return;
       }
       const quantite = s.quantity ?? Number(ligne.quantity);
-      const prix = s.unit_price ?? Number(ligne.unit_price);
       if (cote === 'acheteur' && quantite === 0) { modifiees.set(s.line_no, null); return; }
       if (quantite <= 0) { erreurs.push(`${libelle} : quantité invalide (signalez plutôt le produit indisponible)`); return; }
+      const produit = existants.get(ligne.product_id);
+      if (cote === 'acheteur' && produit && quantite !== Number(ligne.quantity)) erreurs.push(...erreursQuantite(produit, quantite, libelle));
+      // Prix : fixé par le fournisseur, sinon tarif de la nouvelle quantité si la ligne suivait le tarif.
+      let prix = s.unit_price ?? Number(ligne.unit_price);
+      let tarif = { base_unit_price: ligne.base_unit_price, discount_percent: Number(ligne.discount_percent || 0) };
+      if (s.unit_price === undefined && produit && quantite !== Number(ligne.quantity)
+        && Number(ligne.unit_price) === tarification.prixPour(produit, ctx, Number(ligne.quantity)).unit_price) {
+        tarif = tarification.prixPour(produit, ctx, quantite);
+        prix = tarif.unit_price;
+      } else if (s.unit_price !== undefined) {
+        tarif = { base_unit_price: s.unit_price, discount_percent: 0 };
+      }
       let changement = 'inchangee';
       if (quantite !== Number(ligne.quantity)) changement = 'quantite_modifiee';
       else if (prix !== Number(ligne.unit_price)) changement = 'prix_modifie';
       modifiees.set(s.line_no, {
         ...ligne,
         ...recalculer(ligne, { quantite, prixUnitaire: prix }),
+        base_unit_price: tarif.base_unit_price,
+        discount_percent: tarif.discount_percent,
         change_type: changement,
         original_quantity: changement === 'inchangee' ? null : Number(ligne.quantity),
         original_unit_price: prix !== Number(ligne.unit_price) ? Number(ligne.unit_price) : null,
@@ -150,8 +259,14 @@ async function lignesModifiees(supplierId, lignesCourantes, saisies, cote, trans
       erreurs.push(`${libelle} : « ${produit.name} » figure déjà dans la commande (modifiez sa ligne)`);
       return;
     }
+    if (cote === 'acheteur') {
+      if (produit.availability === 'rupture') erreurs.push(`${libelle} : « ${produit.name} » est indisponible chez le fournisseur`);
+      erreurs.push(...erreursQuantite(produit, s.quantity, libelle));
+    }
     ajoutees.push({
-      ...ligneDepuisProduit(produit, { quantite: s.quantity, prixUnitaire: s.unit_price ?? null, commentaire: s.comment || null }),
+      ...ligneDepuisProduit(produit, {
+        quantite: s.quantity, tarif: tarification.prixPour(produit, ctx, s.quantity), prixUnitaire: s.unit_price ?? null, commentaire: s.comment || null,
+      }),
       change_type: s.substitute_for_line_no ? 'substitution' : 'ajoutee',
       substitute_for_line_no: s.substitute_for_line_no || null,
     });
@@ -180,16 +295,18 @@ async function lignesModifiees(supplierId, lignesCourantes, saisies, cote, trans
 
 /** Champs d'une ligne existante, prêts à être recopiés dans une nouvelle version. */
 const CHAMPS_LIGNE = [
-  'line_no', 'product_id', 'reference', 'name', 'unit', 'quantity', 'unit_price', 'tax_rate', 'line_subtotal', 'line_tax',
-  'line_total', 'change_type', 'original_quantity', 'original_unit_price', 'substitute_for_line_no', 'comment',
+  'line_no', 'product_id', 'reference', 'name', 'unit', 'quantity', 'unit_price', 'base_unit_price', 'discount_percent', 'tax_rate',
+  'line_subtotal', 'line_tax', 'line_total', 'change_type', 'original_quantity', 'original_unit_price', 'substitute_for_line_no', 'comment',
 ];
-const copier = (ligne) => Object.fromEntries(CHAMPS_LIGNE.map((c) => [c, ligne[c] ?? null]));
+const copier = (ligne) => Object.fromEntries(CHAMPS_LIGNE.map((c) => [c, ligne[c] ?? (c === 'discount_percent' ? 0 : null)]));
 
 /**
  * Crée une version et ses lignes ; met à jour les totaux de la commande.
  * @returns {Promise<object>} la version créée
  */
-async function creerVersion(t, commande, { numero, cote, auteur, statut, commentaire = null, lignes }) {
+async function creerVersion(t, commande, {
+  numero, cote, auteur, statut, commentaire = null, lignes,
+}) {
   const totaux = totaliser(lignes);
   const version = await OrderVersion.create({
     order_id: commande.id,
@@ -218,5 +335,5 @@ async function remplacerLignes(t, commande, version, lignes) {
 }
 
 module.exports = {
-  produitsDuFournisseur, lignesAcheteur, lignesModifiees, creerVersion, remplacerLignes, copier,
+  produitsDuFournisseur, resoudreReferences, lignesAcheteur, lignesModifiees, creerVersion, remplacerLignes, copier, erreursQuantite,
 };

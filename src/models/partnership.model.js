@@ -20,6 +20,9 @@ const Partnership = sequelize.define('Partnership', {
   supplier_notes: { type: DataTypes.TEXT },
   suspended_by_company_id: { type: DataTypes.UUID },
   suspended_reason: { type: DataTypes.TEXT },
+  price_list_id: { type: DataTypes.UUID },
+  credit_limit: { type: DataTypes.BIGINT },
+  block_on_overdue: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 }, {
   tableName: 'partnerships',
   createdAt: 'created_at',

@@ -20,6 +20,7 @@ l'espace : `espaceEntreprise` (auth, limite de débit, `requireEntreprise`,
 `requireRole('super_admin')`). Un routeur de module n'applique donc QUE
 `requirePermission(P.X)` / `requireProfil('acheteur' | 'fournisseur')` +
 `validate(...)` + `paginate()` / `idempotence()` / `recevoirFichier()`.
+`requirePermission(P.A, P.B)` accepte l'UNE des permissions citées.
 
 Le module `commande` sert deux routeurs sur les mêmes services : `/achats`
 (côté acheteur, `req.cote = 'acheteur'`) et `/ventes` (côté fournisseur).
@@ -68,6 +69,15 @@ Le module `commande` sert deux routeurs sur les mêmes services : `/achats`
   (préfixes `order_prefix` / `invoice_prefix` des paramètres de l'entreprise).
 - Limites du forfait : `droits.verifierLimite(companyId, 'products', t)` DANS la
   transaction de création ; fonctionnalités : `droits.exigerFonctionnalite(...)`.
+- Prix d'une ligne : TOUJOURS `catalogue/service/tarification.service.js`
+  (liste de prix du client, paliers) — jamais `product.price` directement.
+- Stock : TOUJOURS `catalogue/service/stock.service.js` (réservation, sortie,
+  libération, retour, mouvement tracé) — jamais un `update` direct de
+  `stock_quantity` / `stock_reserved`.
+- Argent dû : une facture se règle par `payment_allocations` ET
+  `credit_note_allocations` ; `factures.recalculerStatut` est le seul point
+  de mise à jour d'`amount_paid` / `amount_credited` ; une facture en écart de
+  rapprochement (`match_status` ∈ ecart, conteste) ne reçoit aucune imputation.
 - Erreurs : `throw new ConflictError(message, 'CODE_STABLE')` etc. (`errors/AppError.js`).
   Le code est en MAJUSCULES, stable, documenté.
 

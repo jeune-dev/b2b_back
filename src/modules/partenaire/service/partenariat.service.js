@@ -1,12 +1,14 @@
 'use strict';
 
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 const sequelize = require('../../../config/db.js');
 const { Partnership, Company } = require('../../../models/index.js');
 const { P } = require('../../../config/permissions.js');
 const { parametresEntreprise } = require('../../../config/parametres.js');
 const { ConflictError, ForbiddenError, ValidationError } = require('../../../errors/AppError.js');
 const { chargerPartage } = require('../../../utils/acces.js');
+const { aujourdhui } = require('../../../utils/dates.js');
+const { formatFcfa } = require('../../../utils/montants.js');
 const escapeLike = require('../../../utils/escapeLike.js');
 const droits = require('../../abonnement/service/droits.service.js');
 const { journaliser, difference } = require('../../audit/service/audit.service.js');
@@ -45,7 +47,67 @@ const STATS = [
   [sequelize.literal(`(SELECT coalesce(sum(p.amount), 0) FROM payments p WHERE p.partnership_id = "Partnership"."id" AND p.status = 'confirme')`), 'paid_total'],
   [sequelize.literal(`(SELECT coalesce(sum(i.total - i.amount_paid), 0) FROM invoices i WHERE i.partnership_id = "Partnership"."id"
      AND i.status IN ('emise', 'partiellement_payee', 'en_retard') AND i.due_date < CURRENT_DATE)`), 'overdue_total'],
+  [sequelize.literal(`(SELECT coalesce(sum(cn.total), 0) FROM credit_notes cn WHERE cn.partnership_id = "Partnership"."id" AND cn.status = 'emis')`), 'credited_total'],
 ];
+
+/**
+ * Encours d'un client chez un fournisseur (plafond de crédit) : reste dû des
+ * factures ouvertes + commandes engagées non encore facturées (envoyées,
+ * validées, en livraison, réceptionnées) − avoirs et acomptes non imputés.
+ */
+const STATUTS_ENGAGES = ['envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation', 'prete', 'livree_partiellement', 'livree', 'reception_confirmee'];
+
+async function encours(partnershipId, transaction) {
+  const [r] = await sequelize.query(
+    `SELECT
+       (SELECT coalesce(sum(total - amount_paid), 0) FROM invoices WHERE partnership_id = :id AND status IN ('emise', 'partiellement_payee', 'en_retard')) AS factures,
+       (SELECT coalesce(sum(total), 0) FROM orders WHERE partnership_id = :id AND status IN (:engages)) AS commandes,
+       (SELECT coalesce(sum(amount - allocated_amount), 0) FROM payments WHERE partnership_id = :id AND status = 'confirme') AS acomptes,
+       (SELECT coalesce(sum(total - amount_allocated), 0) FROM credit_notes WHERE partnership_id = :id AND status = 'emis') AS avoirs,
+       (SELECT count(*)::int FROM invoices WHERE partnership_id = :id AND status IN ('emise', 'partiellement_payee', 'en_retard') AND due_date < :jour) AS en_retard`,
+    { replacements: { id: partnershipId, engages: STATUTS_ENGAGES, jour: aujourdhui() }, type: QueryTypes.SELECT, transaction }
+  );
+  return {
+    exposure: Math.max(0, Number(r.factures) + Number(r.commandes) - Number(r.acomptes) - Number(r.avoirs)),
+    overdue_invoices: r.en_retard,
+  };
+}
+
+/** Bloc « crédit » d'un partenariat (montré aux deux parties). */
+async function credit(p, transaction) {
+  const e = await encours(p.id, transaction);
+  const limite = p.credit_limit === null || p.credit_limit === undefined ? null : Number(p.credit_limit);
+  return {
+    limit: limite,
+    exposure: e.exposure,
+    available: limite === null ? null : Math.max(0, limite - e.exposure),
+    block_on_overdue: p.block_on_overdue,
+    overdue_invoices: e.overdue_invoices,
+  };
+}
+
+/**
+ * Plafond de crédit et blocage en cas de retard (fixés par le fournisseur),
+ * vérifiés à l'envoi d'un bon de commande.
+ */
+async function verifierCredit(partenariat, montant, transaction) {
+  if (partenariat.credit_limit === null && !partenariat.block_on_overdue) return;
+  const c = await credit(partenariat, transaction);
+  if (partenariat.block_on_overdue && c.overdue_invoices > 0) {
+    throw new ConflictError(
+      `Vous avez ${c.overdue_invoices} facture(s) échue(s) chez ce fournisseur : réglez-les avant de passer une nouvelle commande.`,
+      'RETARD_DE_PAIEMENT',
+      { overdue_invoices: c.overdue_invoices }
+    );
+  }
+  if (c.limit !== null && c.exposure + Number(montant) > c.limit) {
+    throw new ConflictError(
+      `Plafond de crédit dépassé : encours ${formatFcfa(c.exposure)} + commande ${formatFcfa(montant)} pour un plafond de ${formatFcfa(c.limit)}.`,
+      'PLAFOND_CREDIT_DEPASSE',
+      { limit: c.limit, exposure: c.exposure, available: c.available, order_total: Number(montant) }
+    );
+  }
+}
 
 /** Représentation vue par `companyId` : la contrepartie, la relation, SES notes seulement. */
 function versApi(partenariat, companyId) {
@@ -67,6 +129,10 @@ function versApi(partenariat, companyId) {
     responded_at: p.responded_at,
     payment_terms_days: p.payment_terms_days,
     supplier_customer_code: p.supplier_customer_code,
+    credit_limit: p.credit_limit === null || p.credit_limit === undefined ? null : Number(p.credit_limit),
+    block_on_overdue: p.block_on_overdue,
+    // La liste de prix affectée est une donnée interne du fournisseur.
+    ...(acheteur ? {} : { price_list_id: p.price_list_id }),
     my_notes: acheteur ? p.buyer_notes : p.supplier_notes,
     suspended_by_me: p.suspended_by_company_id ? p.suspended_by_company_id === companyId : null,
     suspended_reason: p.suspended_reason,
@@ -76,12 +142,14 @@ function versApi(partenariat, companyId) {
   if ('invoiced_total' in p) {
     const invoiced = Number(p.invoiced_total);
     const paid = Number(p.paid_total);
+    const credited = Number(p.credited_total);
     resultat.stats = {
       orders_in_progress: p.orders_in_progress,
       invoiced_total: invoiced,
       paid_total: paid,
+      credited_total: credited,
       // Positif : l'acheteur doit cette somme au fournisseur ; négatif : avoir.
-      balance: invoiced - paid,
+      balance: invoiced - paid - credited,
       overdue_total: Number(p.overdue_total),
     };
   }
@@ -117,7 +185,7 @@ async function charger(id, companyId, options = {}) {
 
 async function detail(id, companyId) {
   const { ressource } = await charger(id, companyId, { attributes: { include: STATS }, include: INCLUDES });
-  return versApi(ressource, companyId);
+  return { ...versApi(ressource, companyId), credit: await credit(ressource) };
 }
 
 /**
@@ -304,7 +372,7 @@ function reactiver(acteur, id, companyId) {
   });
 }
 
-const CHAMPS_FOURNISSEUR = ['payment_terms_days', 'supplier_customer_code'];
+const CHAMPS_FOURNISSEUR = ['payment_terms_days', 'supplier_customer_code', 'price_list_id', 'credit_limit', 'block_on_overdue'];
 
 /**
  * Conditions et notes. Le fournisseur fixe le délai de paiement (§ 16) et le
@@ -322,15 +390,22 @@ async function modifier(id, companyId, donnees) {
       }
       champs[c] = donnees[c];
     }
+    if ('price_list_id' in champs) {
+      // Chargé à l'appel : le catalogue dépend lui-même de ce module.
+      await require('../../catalogue/service/listePrix.service.js').verifierAffectation(champs.price_list_id, p.supplier_company_id, t);
+    }
     const avant = p.toJSON();
     await p.update(champs, { transaction: t });
     const visibles = difference(avant, champs, CHAMPS_FOURNISSEUR);
     await journaliser({ action: 'partenariat.modification', entityType: 'partnership', entityId: id, companyId, details: { ...visibles, notes_modifiees: 'notes' in donnees } }, t);
+    if (['price_list_id', 'credit_limit', 'block_on_overdue'].some((c) => c in champs)) {
+      await synchroniser(t, [p.buyer_company_id, p.supplier_company_id], 'partenariat', { partnership_id: id, status: p.status });
+    }
   });
   return detail(id, companyId);
 }
 
 module.exports = {
   lister, detail, charger, exigerActif, demander, accepter, refuser, suspendre, reactiver, modifier,
-  verifierProfils, versApi, STATS, INCLUDES,
+  verifierProfils, versApi, STATS, INCLUDES, encours, credit, verifierCredit,
 };

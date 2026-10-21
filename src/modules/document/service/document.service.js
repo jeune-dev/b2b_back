@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 const sequelize = require('../../../config/db.js');
 const {
-  Document, Partnership, Order, Invoice, Payment, Product, DocumentTemplate, Company,
+  Document, Partnership, Order, Invoice, Payment, Product, DocumentTemplate, Company, Claim,
 } = require('../../../models/index.js');
 const storage = require('../../../infrastructure/storage.service.js');
 const { preparerImage } = require('../../../infrastructure/image.service.js');
@@ -145,6 +145,9 @@ async function verifierRessource(entityType, entityId, companyId) {
       return;
     case 'payment':
       await chargerPartage(Payment, entityId, companyId, { attributes: ['id', 'buyer_company_id', 'supplier_company_id'] }, 'Paiement');
+      return;
+    case 'claim':
+      await chargerPartage(Claim, entityId, companyId, { attributes: ['id', 'buyer_company_id', 'supplier_company_id'] }, 'Litige');
       return;
     case 'partnership':
       await chargerPartage(Partnership, entityId, companyId, { attributes: ['id', 'buyer_company_id', 'supplier_company_id'] }, 'Partenariat');

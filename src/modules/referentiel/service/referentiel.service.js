@@ -27,6 +27,7 @@ function construire() {
   const correspondances = {};
   for (const [nom, valeur] of Object.entries(enums)) {
     if (typeof valeur !== 'object' || valeur === null) continue; // `codes` (fonction)
+    if (Array.isArray(valeur)) continue; // listes de codes internes (règles serveur)
     const entrees = Object.entries(valeur);
     if (entrees.every(([, libelle]) => typeof libelle === 'string')) {
       enumerations[cleApi(nom)] = entrees.map(([code, label]) => ({ code, label }));

@@ -25,7 +25,10 @@ src/__tests__/
     api/<domaine>/    auth, compte, partenaires-catalogue, commandes,
                       facturation-paiements, pilotage (modèles, statistiques,
                       tableaux de bord), notifications-temps-reel, abonnement,
-                      admin, compléments
+                      admin, compléments, achats-avances (tarifs et minimums,
+                      stock, saisie rapide et listes d'achat, approbation et crédit,
+                      livraisons partielles et litiges, rapprochement / relances /
+                      exports comptables / import du catalogue)
     securite/         matrices sur TOUTES les routes (authentification, espaces,
                       identifiants malformés, tri / recherche, affectation de masse)
     postgres/         cohérence énumérations ↔ CHECK, rôles SQL, audit immuable
@@ -75,6 +78,7 @@ src/__tests__/
 | Sécurité | toutes les routes LUES sur le routeur : sans jeton → 401 ; super admin hors de l'admin et entreprise dans l'admin → 403 ; identifiant non UUID → 422 (jamais 500) ; tri hors liste blanche refusé ; champs imposés par le client ignorés |
 | PostgreSQL | énumérations comparées aux CHECK ; rôle applicatif sans droit DDL ; journal d'audit non modifiable |
 | Concurrence | actions simultanées sur une commande, factures en double, paiements simultanés plafonnés, idempotence, numérotation, partenariats croisés |
+| Achats avancés | prix client (liste, paliers) au catalogue et dans les lignes ; minimum / multiple / maximum ; réservation et sortie de stock, alertes ; références, recommander, import CSV (lignes du fichier citées), listes d'achat (arrondis) ; approbation (auteur exclu, envoi automatique, rejet, palier double) ; plafond de crédit et retards ; livraisons partielles, reliquat, BL PDF ; litiges → avoirs imputés, soldes et relevés ; écart de rapprochement bloquant le paiement ; relances une fois par palier ; journaux comptables équilibrés ; import / export du catalogue |
 | E2E | § 28 complet (annuaire → partenariat → catalogue → bon de commande → proposition modifiée → acceptation → statuts → livraison → réception → facture → paiement → solde nul), compte et sécurité |
 
 Une route ajoutée demain est **automatiquement** soumise aux matrices de

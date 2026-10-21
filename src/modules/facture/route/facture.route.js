@@ -6,7 +6,7 @@ const validate = require('../../../middlewares/validate.middleware.js');
 const paginate = require('../../../middlewares/pagination.middleware.js');
 const idempotence = require('../../../middlewares/idempotence.middleware.js');
 const { recevoirFichier } = require('../../../middlewares/upload.middleware.js');
-const { rapportRateLimit } = require('../../../middlewares/rateLimit.middleware.js');
+const { rapportRateLimit, mutationRateLimit } = require('../../../middlewares/rateLimit.middleware.js');
 const { requirePermission, requireProfil } = require('../../../middlewares/acces.middleware.js');
 const { P } = require('../../../config/permissions.js');
 const { paramId } = require('../../../validations/common.js');
@@ -23,5 +23,12 @@ router.post('/', ...emettre, recevoirFichier('justificatif', { obligatoire: fals
 router.get('/:id', lire, id, ctrl.detail);
 router.get('/:id/pdf', lire, rapportRateLimit, id, ctrl.pdf);
 router.post('/:id/annuler', ...emettre, id, validate(v.annulationSchema), ctrl.annuler);
+// Rapprochement commande / réception / facture : décision de l'acheteur sur un écart.
+const deciderEcart = [requireProfil('acheteur'), requirePermission(P.PAIEMENTS_ENREGISTRER)];
+router.post('/:id/accepter-ecart', ...deciderEcart, id, validate(v.ecartSchema), ctrl.accepterEcart);
+router.post('/:id/contester', ...deciderEcart, id, validate(v.contestationSchema), ctrl.contester);
+// Relances des impayés : historique (deux parties), relance manuelle (fournisseur).
+router.get('/:id/relances', lire, id, ctrl.relances);
+router.post('/:id/relancer', ...emettre, mutationRateLimit, id, ctrl.relancer);
 
 module.exports = router;

@@ -97,19 +97,22 @@ async function nouvelleReference(supplierId, t) {
 }
 
 const STATUTS_OUVERTS = ['emise', 'partiellement_payee', 'en_retard'];
+/** Facture en écart de rapprochement (non accepté) ou contestée : rien ne s'y impute. */
+const RAPPROCHEMENTS_BLOQUANTS = ['ecart', 'conteste'];
 
 /**
  * Impute `disponible` FCFA du paiement sur des factures du même partenariat :
  * celles désignées (montants explicites), sinon les plus anciennes
- * d'abord (échéance, puis date). Factures et commandes mises à jour dans la
- * même transaction.
+ * d'abord (échéance, puis date). Une facture bloquée par un écart de
+ * rapprochement n'est jamais payée. Factures et commandes mises à jour dans
+ * la même transaction.
  * @returns {Promise<number>} montant imputé
  */
 async function imputer(t, paiement, demandes, acteur) {
   const disponible = Number(paiement.amount) - Number(paiement.allocated_amount);
   if (disponible <= 0) return 0;
   const ouvertes = await Invoice.findAll({
-    where: { partnership_id: paiement.partnership_id, status: { [Op.in]: STATUTS_OUVERTS } },
+    where: { partnership_id: paiement.partnership_id, status: { [Op.in]: STATUTS_OUVERTS }, match_status: { [Op.notIn]: RAPPROCHEMENTS_BLOQUANTS } },
     order: [['due_date', 'ASC'], ['issue_date', 'ASC'], ['created_at', 'ASC']],
     lock: t.LOCK.UPDATE,
     transaction: t,
@@ -121,7 +124,7 @@ async function imputer(t, paiement, demandes, acteur) {
     let somme = 0;
     plan = demandes.map((d) => {
       const f = parId.get(d.invoice_id);
-      if (!f) erreurs.push(`Facture ${d.invoice_id} introuvable, déjà payée ou d'un autre partenaire`);
+      if (!f) erreurs.push(`Facture ${d.invoice_id} introuvable, déjà payée, d'un autre partenaire ou bloquée par un écart de rapprochement`);
       else if (d.amount > Number(f.total) - Number(f.amount_paid)) erreurs.push(`Facture ${f.number} : montant supérieur au reste à payer (${formatFcfa(Number(f.total) - Number(f.amount_paid))})`);
       somme += d.amount;
       return { facture: f, montant: d.amount };
@@ -144,7 +147,6 @@ async function imputer(t, paiement, demandes, acteur) {
   let impute = 0;
   for (const { facture, montant } of plan) {
     await PaymentAllocation.create({ payment_id: paiement.id, invoice_id: facture.id, amount: montant }, { transaction: t });
-    await facture.update({ amount_paid: Number(facture.amount_paid) + montant }, { transaction: t });
     impute += montant;
     const commande = await Order.findByPk(facture.order_id, { attributes: ['id', 'buyer_company_id', 'supplier_company_id', 'status'], transaction: t });
     await C.historiser(t, commande, {
@@ -329,5 +331,5 @@ async function ajouterPreuve(id, companyId, user, fichier) {
 }
 
 module.exports = {
-  lister, detail, enregistrer, confirmer, rejeter, annuler, ajouterPreuve, imputer, imputerCredits,
+  lister, detail, enregistrer, confirmer, rejeter, annuler, ajouterPreuve, imputer, imputerCredits, STATUTS_OUVERTS, RAPPROCHEMENTS_BLOQUANTS,
 };

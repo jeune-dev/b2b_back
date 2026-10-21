@@ -509,8 +509,9 @@ const sectionsPar = (liste, n, titres, prefixeTitre = '') => {
 const TITRES_ENTREPRISE = {
   'tableau-de-bord': 'Tableau de bord', entreprise: 'Mon entreprise (profil, paramètres, logo)', utilisateurs: 'Utilisateurs internes et rôles',
   annuaire: 'Annuaire des entreprises', partenariats: 'Partenariats acheteur / fournisseur', produits: 'Catalogue — produits',
-  'categories-produits': 'Catalogue — catégories', catalogues: 'Catalogues des fournisseurs', achats: 'Achats — bons de commande (acheteur)',
-  ventes: 'Ventes — commandes reçues (fournisseur)', factures: 'Factures', paiements: 'Paiements', situation: 'Dettes, créances et relevés',
+  'categories-produits': 'Catalogue — catégories', catalogues: 'Catalogues des fournisseurs', 'listes-prix': 'Listes de prix (tarifs clients)',
+  'listes-achat': 'Listes d’achat habituelles', achats: 'Achats — bons de commande (acheteur)',
+  ventes: 'Ventes — commandes reçues (fournisseur)', factures: 'Factures', avoirs: 'Avoirs', litiges: 'Retours et litiges', paiements: 'Paiements', situation: 'Dettes, créances et relevés',
   statistiques: 'Statistiques et exports', 'modeles-documents': 'Modèles de documents', documents: 'Documents et fichiers',
   abonnement: 'Abonnement', evenements: 'Synchronisation temps réel (web / mobile)',
 };

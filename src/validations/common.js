@@ -65,7 +65,26 @@ const pagination = {
   limit: Joi.number().integer().min(1),
 };
 
+/**
+ * Tableau reçu en JSON ou, dans un envoi multipart (champs texte), sous la
+ * forme d'une chaîne JSON : relu puis validé par le même schéma.
+ */
+const jsonOuTableau = (schemaTableau) => Joi.alternatives().try(
+  schemaTableau,
+  Joi.string().max(200000).custom((valeur, aide) => {
+    let lu;
+    try {
+      lu = JSON.parse(valeur);
+    } catch {
+      return aide.message('{{#label}} : JSON invalide');
+    }
+    const { value, error } = schemaTableau.validate(lu);
+    if (error) return aide.message(`{{#label}} : ${error.message.replace(/"/g, '')}`);
+    return value;
+  })
+);
+
 module.exports = {
   Joi, uuid, telephone, email, motDePasse, nom, montant, montantPositif, dateIso,
-  texteCourt, texteLong, paramId, tri, recherche, pagination,
+  texteCourt, texteLong, paramId, tri, recherche, pagination, jsonOuTableau,
 };

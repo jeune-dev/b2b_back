@@ -7,6 +7,7 @@ const { ConflictError } = require('../../../errors/AppError.js');
 const { formatFcfa } = require('../../../utils/montants.js');
 const C = require('./commun.js');
 const L = require('./lignes.service.js');
+const stock = require('../../catalogue/service/stock.service.js');
 const { detail } = require('./commande.service.js');
 const { journaliser } = require('../../audit/service/audit.service.js');
 const { notifierEntreprise } = require('../../notification/service/notification.service.js');
@@ -42,8 +43,12 @@ async function versionProposee(commande, cote, t) {
   return v;
 }
 
-/** Validation commune : version acceptée, commande validée (§ 11). */
+/**
+ * Validation commune : version acceptée, commande validée (§ 11) ; les
+ * quantités validées des produits suivis en stock sont réservées.
+ */
 async function valider(t, commande, version, user) {
+  await stock.reserver(t, commande, version.lines, user);
   await version.update({ status: 'acceptee', decided_at: new Date(), decided_by: user.id }, { transaction: t });
   await commande.update({ status: 'validee', validated_at: new Date(), validated_version_no: version.version_no }, { transaction: t });
 }
@@ -97,7 +102,7 @@ async function proposer(id, companyId, user, { lines, comment = null, revision }
     C.verifierStatut(commande, 'proposition_modifiee');
     const courante = await versionProposee(commande, 'acheteur', t);
     const nouvelles = await L.lignesModifiees(
-      commande.supplier_company_id, courante.lines.map((l) => l.get({ plain: true })), lines, 'fournisseur', t
+      commande.supplier_company_id, commande.buyer_company_id, courante.lines.map((l) => l.get({ plain: true })), lines, 'fournisseur', t
     );
     const avant = commande.status;
     await courante.update({ status: 'remplacee', decided_at: new Date(), decided_by: user.id }, { transaction: t });
@@ -204,7 +209,7 @@ async function demanderModification(id, companyId, user, { lines = [], comment, 
     const courante = await versionProposee(commande, 'fournisseur', t);
     const simples = courante.lines.map((l) => l.get({ plain: true }));
     const nouvelles = lines.length
-      ? await L.lignesModifiees(commande.supplier_company_id, simples, lines, 'acheteur', t)
+      ? await L.lignesModifiees(commande.supplier_company_id, commande.buyer_company_id, simples, lines, 'acheteur', t)
       : simples.map((l) => ({ ...l, change_type: l.change_type === 'indisponible' ? 'indisponible' : 'inchangee', original_quantity: null, original_unit_price: null }));
     await courante.update({ status: 'remplacee', decided_at: new Date(), decided_by: user.id }, { transaction: t });
     const version = await L.creerVersion(t, commande, {

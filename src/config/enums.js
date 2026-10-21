@@ -141,6 +141,7 @@ const STATUT_COMMANDE = def([
   ['validee', 'Commande validée'],
   ['en_preparation', 'En préparation'],
   ['prete', 'Prête'],
+  ['livree_partiellement', 'Livrée partiellement'],
   ['livree', 'Livrée'],
   ['reception_confirmee', 'Réception confirmée'],
   ['facturee', 'Facturée'],
@@ -197,6 +198,89 @@ const EVENEMENT_COMMANDE = def([
   ['cloture', 'Commande terminée'],
   ['piece_jointe', 'Pièce jointe'],
   ['commentaire', 'Commentaire'],
+  ['soumission_approbation', 'Soumission à approbation interne'],
+  ['approbation', 'Approbation interne'],
+  ['rejet_approbation', 'Rejet de l’approbation interne'],
+  ['livraison_partielle', 'Livraison partielle'],
+  ['reception_partielle', 'Réception d’une livraison'],
+  ['reliquat_solde', 'Reliquat soldé'],
+  ['litige', 'Litige'],
+  ['avoir', 'Avoir'],
+]);
+
+/**
+ * Événements internes à l'ACHETEUR (circuit d'approbation) : jamais montrés
+ * au fournisseur dans l'historique de la commande.
+ */
+const EVENEMENTS_INTERNES_ACHETEUR = Object.freeze(['creation', 'modification', 'soumission_approbation', 'approbation', 'rejet_approbation']);
+
+/** Circuit d'approbation interne d'un bon de commande (avant envoi). */
+const STATUT_APPROBATION = def([
+  ['non_requise', 'Approbation non requise'],
+  ['en_attente', 'En attente d’approbation'],
+  ['approuvee', 'Approuvée'],
+  ['rejetee', 'Rejetée'],
+]);
+
+const DECISION_APPROBATION = def([
+  ['approuvee', 'Approuvée'],
+  ['rejetee', 'Rejetée'],
+]);
+
+/** Livraison (bon de livraison) d'une commande : une commande peut en compter plusieurs. */
+const STATUT_LIVRAISON = def([
+  ['expediee', 'Expédiée'],
+  ['receptionnee', 'Réceptionnée'],
+]);
+
+/** Retours et litiges après livraison. */
+const TYPE_LITIGE = def([
+  ['manquant', 'Produit manquant'],
+  ['endommage', 'Produit endommagé'],
+  ['non_conforme', 'Produit non conforme'],
+  ['erreur_produit', 'Erreur de produit'],
+  ['perime', 'Produit périmé'],
+  ['autre', 'Autre'],
+]);
+
+const STATUT_LITIGE = def([
+  ['ouvert', 'Ouvert'],
+  ['accepte', 'Accepté (avoir émis)'],
+  ['refuse', 'Refusé'],
+  ['annule', 'Annulé'],
+]);
+
+/** Avoir (note de crédit) émis par le fournisseur. */
+const STATUT_AVOIR = def([
+  ['emis', 'Émis'],
+  ['annule', 'Annulé'],
+]);
+
+/**
+ * Rapprochement commande / réception / facture. « ecart » et « conteste »
+ * BLOQUENT le paiement de la facture.
+ */
+const STATUT_RAPPROCHEMENT = def([
+  ['conforme', 'Conforme'],
+  ['ecart', 'Écart à valider'],
+  ['accepte', 'Écart accepté'],
+  ['conteste', 'Contestée'],
+]);
+
+/** Mouvements de stock d'un produit du fournisseur. */
+const TYPE_MOUVEMENT_STOCK = def([
+  ['entree', 'Entrée en stock'],
+  ['ajustement', 'Ajustement d’inventaire'],
+  ['reservation', 'Réservation (commande validée)'],
+  ['liberation', 'Libération de réservation'],
+  ['sortie', 'Sortie (livraison)'],
+  ['retour', 'Retour client'],
+]);
+
+/** Relance d'une facture impayée. */
+const CANAL_RELANCE = def([
+  ['auto', 'Automatique'],
+  ['manuel', 'Manuelle'],
 ]);
 
 /** § 14, § 16 — facture. */
@@ -267,6 +351,7 @@ const ENTITE_DOCUMENT = def([
   ['company', 'Entreprise'],
   ['product', 'Produit'],
   ['order', 'Commande'],
+  ['claim', 'Litige'],
   ['invoice', 'Facture'],
   ['payment', 'Paiement'],
   ['document_template', 'Modèle de document'],
@@ -312,6 +397,15 @@ const TYPE_NOTIFICATION = def([
   ['partenariat', 'Partenariat'],
   ['commentaire', 'Nouveau message'],
   ['abonnement', 'Abonnement'],
+  ['approbation_requise', 'Approbation requise'],
+  ['commande_approuvee', 'Commande approuvée'],
+  ['approbation_rejetee', 'Approbation rejetée'],
+  ['livraison_partielle', 'Livraison partielle'],
+  ['litige', 'Litige'],
+  ['avoir', 'Avoir'],
+  ['facture_ecart', 'Écart de facturation'],
+  ['relance_facture', 'Relance de facture'],
+  ['stock_bas', 'Stock bas'],
   ['systeme', 'Information'],
 ]);
 
@@ -367,7 +461,9 @@ module.exports = {
   TYPE_ENTREPRISE, SECTEUR_ACTIVITE, REGIME_FISCAL,
   STATUT_PARTENARIAT, RELATION, STATUT_INVITATION_PARTENAIRE,
   UNITE, DISPONIBILITE,
-  STATUT_COMMANDE, COTE, STATUT_VERSION, CHANGEMENT_LIGNE, EVENEMENT_COMMANDE,
+  STATUT_COMMANDE, COTE, STATUT_VERSION, CHANGEMENT_LIGNE, EVENEMENT_COMMANDE, EVENEMENTS_INTERNES_ACHETEUR,
+  STATUT_APPROBATION, DECISION_APPROBATION, STATUT_LIVRAISON, TYPE_LITIGE, STATUT_LITIGE, STATUT_AVOIR,
+  STATUT_RAPPROCHEMENT, TYPE_MOUVEMENT_STOCK, CANAL_RELANCE,
   STATUT_FACTURE, SOURCE_FACTURE, MODE_PAIEMENT, STATUT_PAIEMENT,
   TYPE_MODELE_DOCUMENT, STATUT_MODELE_DOCUMENT,
   CATEGORIE_DOCUMENT, ENTITE_DOCUMENT, VISIBILITE_DOCUMENT,

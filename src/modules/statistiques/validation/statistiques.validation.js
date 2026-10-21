@@ -16,7 +16,9 @@ const periodeSchema = Joi.object(periode).custom((v, aide) => {
   return v;
 });
 
-const exportParam = Joi.object({ type: Joi.string().valid('commandes', 'factures', 'paiements').required() });
+const exportParam = Joi.object({
+  type: Joi.string().valid('commandes', 'factures', 'paiements', 'journal_ventes', 'journal_achats', 'journal_tresorerie').required(),
+});
 
 const exportSchema = Joi.object({
   ...periode,

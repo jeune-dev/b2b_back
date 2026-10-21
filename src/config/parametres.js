@@ -26,6 +26,44 @@ const DEFAUTS_ENTREPRISE = Object.freeze({
   invoice_reminder_days_before: 3,
   // Conditions générales reprises sur chaque bon de commande émis.
   default_order_conditions: null,
+
+  // ── Achats (côté acheteur) ──────────────────────────────────────────────
+  // Circuit d'approbation interne : à partir de `min_total` FCFA TTC, un bon
+  // de commande exige `approvals` approbations DISTINCTES (permission
+  // achats.approuver, jamais celle de son auteur) avant de partir chez le
+  // fournisseur. Vide : pas d'approbation.
+  order_approval_levels: [],
+  // Rapprochement commande / réception / facture : écart toléré (en %) sur
+  // les quantités et prix facturés avant blocage du paiement.
+  invoice_match_tolerance_percent: 2,
+
+  // ── Ventes (côté fournisseur) ───────────────────────────────────────────
+  // Montant minimum (HT, FCFA) d'un bon de commande reçu. null : aucun.
+  min_order_amount: null,
+  // Relances graduées des factures impayées : jours APRÈS l'échéance.
+  dunning_enabled: true,
+  dunning_days_after_due: [3, 7, 15],
+  // Alerte de stock bas (produits suivis en stock).
+  low_stock_alerts: true,
+
+  // ── Comptabilité (export SYSCOHADA) ─────────────────────────────────────
+  // Comptes surchargeables un à un ; les autres gardent le plan SYSCOHADA.
+  accounting_accounts: {},
+});
+
+/** Plan de comptes SYSCOHADA révisé utilisé par l'export comptable. */
+const COMPTES_SYSCOHADA = Object.freeze({
+  clients: '411100',
+  fournisseurs: '401100',
+  ventes: '701100',
+  achats: '601100',
+  tva_collectee: '443100',
+  tva_deductible: '445200',
+  banque: '521100',
+  caisse: '571100',
+  mobile_money: '585000',
+  rrr_obtenus: '601900',
+  rrr_accordes: '701900',
 });
 
 const schemaParametresEntreprise = Joi.object({
@@ -37,6 +75,17 @@ const schemaParametresEntreprise = Joi.object({
   auto_accept_partnerships: Joi.boolean(),
   invoice_reminder_days_before: Joi.number().integer().min(0).max(60),
   default_order_conditions: Joi.string().trim().max(2000).allow('', null),
+  order_approval_levels: Joi.array().items(Joi.object({
+    min_total: Joi.number().integer().min(0).max(1e13).required(),
+    approvals: Joi.number().integer().min(1).max(3).required(),
+  })).max(5).unique('min_total'),
+  invoice_match_tolerance_percent: Joi.number().min(0).max(50).precision(2),
+  min_order_amount: Joi.number().integer().min(1).max(1e13).allow(null),
+  dunning_enabled: Joi.boolean(),
+  dunning_days_after_due: Joi.array().items(Joi.number().integer().min(1).max(365)).min(1).max(6).unique(),
+  low_stock_alerts: Joi.boolean(),
+  accounting_accounts: Joi.object(Object.fromEntries(Object.keys(COMPTES_SYSCOHADA).map((c) => [c, Joi.string().trim().pattern(/^[0-9A-Z]{2,12}$/)
+    .messages({ 'string.pattern.base': '{{#label}} : 2 à 12 chiffres ou lettres majuscules' })]))),
 });
 
 /** Paramètres effectifs d'une entreprise (défauts + surcharges). */
@@ -58,7 +107,19 @@ const SCHEMAS_PLATEFORME = Object.freeze({
   paiement: Joi.object({ expiration_minutes: Joi.number().integer().min(5).max(1440).required() }),
 });
 
+/** Comptes effectifs d'une entreprise : SYSCOHADA + ses surcharges. */
+const comptesComptables = (reglages) => ({ ...COMPTES_SYSCOHADA, ...(reglages.accounting_accounts || {}) });
+
+/**
+ * Nombre d'approbations exigées pour un total TTC : palier le plus élevé
+ * atteint (0 : aucune).
+ */
+function approbationsRequises(reglages, total) {
+  const paliers = [...(reglages.order_approval_levels || [])].sort((a, b) => b.min_total - a.min_total);
+  return paliers.find((p) => Number(total) >= p.min_total)?.approvals || 0;
+}
+
 module.exports = {
-  DEFAUTS_ENTREPRISE, schemaParametresEntreprise, parametresEntreprise,
+  DEFAUTS_ENTREPRISE, schemaParametresEntreprise, parametresEntreprise, COMPTES_SYSCOHADA, comptesComptables, approbationsRequises,
   DEFAUTS_PLATEFORME, SCHEMAS_PLATEFORME,
 };

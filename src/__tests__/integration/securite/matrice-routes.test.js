@@ -56,7 +56,7 @@ describe('Matrice des espaces', () => {
     }
   );
 
-  const ESPACE = /^\/api\/v1\/(tableau-de-bord|entreprise|utilisateurs|annuaire|partenariats|produits|categories-produits|catalogues|achats|ventes|factures|paiements|situation|statistiques|modeles-documents|documents|abonnement\/?$|abonnement\/(paiements|souscrire))/;
+  const ESPACE = /^\/api\/v1\/(tableau-de-bord|entreprise|utilisateurs|annuaire|partenariats|produits|categories-produits|catalogues|listes-prix|listes-achat|achats|ventes|factures|avoirs|litiges|paiements|situation|statistiques|modeles-documents|documents|abonnement\/?$|abonnement\/(paiements|souscrire))/;
   test.each(routes.filter((r) => ESPACE.test(r.chemin)).map((r) => [r.methode, r.chemin, r]))(
     '%s %s refusé au super admin (403 ESPACE_ENTREPRISE_REQUIS)', async (methode, chemin, r) => {
       const res = await appeler(api(), r).set(admin.h).send({});

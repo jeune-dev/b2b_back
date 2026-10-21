@@ -117,10 +117,10 @@ describe('énumérations', () => {
       for (const libelle of Object.values(valeur)) expect(String(libelle).trim()).not.toBe('');
     }
   });
-  test('statuts de commande : le parcours du § 12 dans l’ordre', () => {
-    expect(E.codes(E.STATUT_COMMANDE).slice(0, 11)).toEqual([
+  test('statuts de commande : le parcours du § 12 dans l’ordre (livraison partielle avant « livrée »)', () => {
+    expect(E.codes(E.STATUT_COMMANDE).slice(0, 12)).toEqual([
       'brouillon', 'envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation',
-      'prete', 'livree', 'reception_confirmee', 'facturee', 'terminee',
+      'prete', 'livree_partiellement', 'livree', 'reception_confirmee', 'facturee', 'terminee',
     ]);
   });
 });

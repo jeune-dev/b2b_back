@@ -5,6 +5,7 @@ const asyncHandler = require('../../../middlewares/asyncHandler.js');
 const { ok, created, paginated } = require('../../../utils/response.js');
 const logger = require('../../../utils/logger.js');
 const S = require('../service/facture.service.js');
+const Relances = require('../service/relance.service.js');
 const Rendu = require('../../modele/service/rendu.service.js');
 const Documents = require('../../document/service/document.service.js');
 
@@ -13,11 +14,26 @@ exports.lister = asyncHandler(async (req, res) =>
 
 exports.detail = asyncHandler(async (req, res) => ok(res, { invoice: await S.detail(req.params.id, req.companyId) }));
 
-exports.emettre = asyncHandler(async (req, res) =>
-  created(res, { invoice: await S.emettre(req.companyId, req.user, req.body, req.fichier || null) }, 'Facture émise et transmise au client'));
+exports.emettre = asyncHandler(async (req, res) => {
+  const facture = await S.emettre(req.companyId, req.user, req.body, req.fichier || null);
+  return created(res, { invoice: facture }, facture.match_status === 'ecart'
+    ? 'Facture émise avec un écart de rapprochement : son paiement attend la validation du client'
+    : 'Facture émise et transmise au client');
+});
 
 exports.annuler = asyncHandler(async (req, res) =>
   ok(res, { invoice: await S.annuler(req.params.id, req.companyId, req.user, req.body) }, 'Facture annulée'));
+
+exports.accepterEcart = asyncHandler(async (req, res) =>
+  ok(res, { invoice: await S.deciderEcart(req.params.id, req.companyId, req.user, { ...req.body, decision: 'accepte' }) }, 'Écart accepté : la facture est payable'));
+
+exports.contester = asyncHandler(async (req, res) =>
+  ok(res, { invoice: await S.deciderEcart(req.params.id, req.companyId, req.user, { ...req.body, decision: 'conteste' }) }, 'Facture contestée : le fournisseur est averti'));
+
+exports.relances = asyncHandler(async (req, res) => ok(res, await Relances.historique(req.params.id, req.companyId)));
+
+exports.relancer = asyncHandler(async (req, res) =>
+  created(res, await Relances.relancer(req.params.id, req.companyId, req.user), 'Relance envoyée au client'));
 
 /**
  * § 14 « consulter la facture, télécharger la facture » : PDF généré au

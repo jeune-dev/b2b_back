@@ -7,15 +7,17 @@ const {
   Invoice, InvoiceLine, Order, Company, Partnership, PaymentAllocation, Payment,
 } = require('../../../models/index.js');
 const { P } = require('../../../config/permissions.js');
+const { parametresEntreprise } = require('../../../config/parametres.js');
 const { ConflictError, ValidationError } = require('../../../errors/AppError.js');
 const { chargerPartage } = require('../../../utils/acces.js');
 const { prochainNumero, pad } = require('../../../utils/compteur.js');
 const { aujourdhui, ajouterJours, formatFr } = require('../../../utils/dates.js');
 const { ordre, periode, rechercheTexte } = require('../../../utils/liste.js');
-const { montantLigne, totaliser, formatFcfa } = require('../../../utils/montants.js');
+const { totaliser, formatFcfa } = require('../../../utils/montants.js');
 const cache = require('../../../utils/cache.js');
 const { transactionAvecFichiers } = require('../../../database/transaction.js');
 const C = require('../../commande/service/commun.js');
+const R = require('./rapprochement.service.js');
 const parametres = require('../../parametres/service/parametres.service.js');
 const documents = require('../../document/service/document.service.js');
 const modeles = require('../../modele/service/modele.service.js');
@@ -54,6 +56,8 @@ function versApi(facture, companyId) {
     ...f,
     direction: sens,
     balance_due: f.status === 'annulee' ? 0 : Number(f.total) - Number(f.amount_paid),
+    // Écart de rapprochement non résolu : aucun paiement ne s'impute sur la facture.
+    payment_blocked: f.status !== 'annulee' && R.estBloquee(f),
     pdf_url: `/api/v1/factures/${f.id}/pdf`,
   };
 }
@@ -70,6 +74,7 @@ async function lister(companyId, f, { limit, offset }) {
   if (f.status) conditions.push({ status: { [Op.in]: String(f.status).split(',') } });
   if (f.partner_id) conditions.push({ [Op.or]: [{ supplier_company_id: f.partner_id }, { buyer_company_id: f.partner_id }] });
   if (f.impayees) conditions.push({ status: { [Op.in]: ['emise', 'partiellement_payee', 'en_retard'] } });
+  if (f.bloquees) conditions.push({ match_status: { [Op.in]: ['ecart', 'conteste'] }, status: { [Op.ne]: 'annulee' } });
   const texte = rechercheTexte(f.q, ['number']);
   if (texte) conditions.push(texte);
   const dates = periode(f.du, f.au);
@@ -110,38 +115,31 @@ async function nouveauNumero(companyId, t) {
   return `${prefixe}-${annee}-${pad(n)}`;
 }
 
+/** Lignes facturées numérotées de 1 à n (le lien à la ligne de commande sert au rapprochement). */
+const numeroter = (lignes) => lignes.map((l, i) => {
+  const copie = { ...l, line_no: i + 1 };
+  delete copie.order_line_no;
+  return copie;
+});
+
 /**
- * Lignes de facture : version VALIDÉE de la commande, quantités RÉCEPTIONNÉES
- * (§ 13 : livraison partielle ou casse) ; une ligne sans quantité reçue
- * (indisponible, rien reçu) n'est pas facturée.
+ * Lignes de facture attendues : version VALIDÉE de la commande, quantités
+ * RÉCEPTIONNÉES (§ 13 : livraison partielle ou casse) ; une ligne sans
+ * quantité reçue (indisponible, rien reçu) n'est pas facturée.
  */
 function lignesFacture(lignesCommande) {
-  let numero = 0;
-  return lignesCommande
-    .map((l) => ({ ligne: l, quantite: l.received_quantity !== null && l.received_quantity !== undefined ? Number(l.received_quantity) : Number(l.quantity) }))
-    .filter(({ quantite }) => quantite > 0)
-    .map(({ ligne, quantite }) => {
-      const m = montantLigne({ quantite, prixUnitaire: Number(ligne.unit_price), tauxTva: Number(ligne.tax_rate) });
-      numero += 1;
-      return {
-        line_no: numero,
-        product_id: ligne.product_id,
-        reference: ligne.reference,
-        name: ligne.name,
-        unit: ligne.unit,
-        quantity: quantite,
-        unit_price: Number(ligne.unit_price),
-        tax_rate: Number(ligne.tax_rate),
-        line_subtotal: m.sousTotal,
-        line_tax: m.tva,
-        line_total: m.total,
-      };
-    });
+  return numeroter(R.lignesAttendues(lignesCommande));
 }
 
 /**
  * § 14 — émission de la facture d'une commande réceptionnée. `fichier` :
  * facture propre du fournisseur (transmise) ; sinon générée par Pro2Link.
+ *
+ * Par défaut la facture reprend les quantités reçues aux prix validés. Le
+ * fournisseur peut préciser d'autres quantités ou prix (`lines`) : la
+ * facture est alors RAPPROCHÉE de la commande et de la réception — au-delà
+ * de la tolérance de l'acheteur, elle est émise « avec écart » et son
+ * paiement est bloqué jusqu'à la décision de l'acheteur.
  */
 async function emettre(companyId, user, donnees, fichier = null) {
   let avis;
@@ -158,9 +156,15 @@ async function emettre(companyId, user, donnees, fichier = null) {
       );
     }
     const version = await C.version(commande.id, commande.validated_version_no, t);
-    const lignes = lignesFacture(version.lines);
-    if (!lignes.length) throw new ValidationError('Données invalides', ['Aucune quantité réceptionnée à facturer'], 'FACTURE_VIDE');
+    const attendues = R.lignesAttendues(version.lines);
+    const facturees = R.lignesFacturees(attendues, version.lines, donnees.lines);
+    if (!facturees.length) throw new ValidationError('Données invalides', ['Aucune quantité réceptionnée à facturer'], 'FACTURE_VIDE');
+    const lignes = numeroter(facturees);
     const totaux = totaliser(lignes);
+    const acheteur = await Company.findByPk(commande.buyer_company_id, { attributes: ['settings'], transaction: t });
+    const rapprochement = R.rapprocher(
+      attendues, facturees, Number(parametresEntreprise(acheteur).invoice_match_tolerance_percent), fichier ? donnees.declared_total ?? null : null
+    );
     const partenariat = await Partnership.findByPk(commande.partnership_id, { attributes: ['payment_terms_days'], transaction: t });
     const emission = donnees.issue_date || aujourdhui();
     const echeance = donnees.due_date || ajouterJours(emission, partenariat.payment_terms_days);
@@ -189,6 +193,8 @@ async function emettre(companyId, user, donnees, fichier = null) {
       template_id: modele?.id || null,
       file_document_id: document?.id || null,
       note: donnees.note || null,
+      match_status: rapprochement.statut,
+      match_details: rapprochement.details,
       created_by: user.id,
     }, { transaction: t });
     await InvoiceLine.bulkCreate(lignes.map((l) => ({ ...l, invoice_id: facture.id })), { transaction: t });
@@ -199,14 +205,24 @@ async function emettre(companyId, user, donnees, fichier = null) {
       details: { invoice_id: facture.id, number: facture.number, total: facture.total },
     });
     await C.apresChangement(t, commande);
-    // Acompte ou trop-perçu antérieur du client : imputé sur la nouvelle facture (§ 16).
-    // Chargé à l'appel : le module paiement dépend lui-même de ce module.
-    await require('../../paiement/service/paiement.service.js').imputerCredits(commande.partnership_id, t, user);
+    // Avoirs, acompte ou trop-perçu antérieurs du client : imputés sur la
+    // nouvelle facture (§ 16) — sauf facture bloquée par un écart.
+    await imputerToutCredit(commande.partnership_id, t, user);
     await facture.reload({ transaction: t });
     await journaliser({
       action: 'facture.creation', entityType: 'invoice', entityId: facture.id, companyId,
-      details: { number: facture.number, commande: commande.number, total: facture.total, source: facture.source, echeance },
+      details: {
+        number: facture.number, commande: commande.number, total: facture.total, source: facture.source, echeance, rapprochement: rapprochement.statut,
+      },
     }, t);
+    if (rapprochement.statut === 'ecart') {
+      await notifierEntreprise(t, commande.buyer_company_id, P.PAIEMENTS_ENREGISTRER, {
+        type: 'facture_ecart',
+        titre: `Écart de facturation — ${facture.number}`,
+        corps: `La facture ${facture.number} ne correspond pas à la commande ${commande.number} et à sa réception (${rapprochement.details.ecarts.length} écart(s)). Son paiement est bloqué : acceptez l'écart ou contestez la facture.`,
+        donnees: { invoice_id: facture.id, order_id: commande.id, number: facture.number },
+      });
+    }
     const [fournisseur, client] = await Promise.all([
       Company.findByPk(companyId, { attributes: ['name'], transaction: t }),
       Company.findByPk(commande.buyer_company_id, { attributes: ['email'], transaction: t }),
@@ -243,7 +259,7 @@ async function annuler(id, companyId, user, { reason }) {
     if (facture.status === 'annulee') throw new ConflictError('Cette facture est déjà annulée.', 'STATUT_INCHANGE');
     const imputations = await PaymentAllocation.count({ where: { invoice_id: id, cancelled_at: null }, transaction: t });
     if (imputations || Number(facture.amount_paid) > 0) {
-      throw new ConflictError('Des paiements sont imputés sur cette facture : annulez-les avant d’annuler la facture.', 'FACTURE_PAYEE');
+      throw new ConflictError('Des paiements ou des avoirs sont imputés sur cette facture : annulez-les avant d’annuler la facture.', 'FACTURE_PAYEE');
     }
     await facture.update({ status: 'annulee', cancelled_at: new Date(), cancellation_reason: reason }, { transaction: t });
     const commande = await Order.findByPk(facture.order_id, { transaction: t, lock: t.LOCK.UPDATE });
@@ -273,16 +289,19 @@ async function annuler(id, companyId, user, { reason }) {
  * commande TERMINÉE (§ 12, dernier statut) ; de nouveau due → « facturée ».
  */
 async function recalculerStatut(facture, t, acteur = null) {
-  const [[{ paye }]] = await sequelize.query(
-    'SELECT coalesce(sum(amount), 0)::bigint AS paye FROM payment_allocations WHERE invoice_id = :id AND cancelled_at IS NULL',
+  // Réglé = paiements imputés + avoirs imputés (amount_credited : part des avoirs).
+  const [[{ paye, credite }]] = await sequelize.query(
+    `SELECT
+       (SELECT coalesce(sum(amount), 0) FROM payment_allocations WHERE invoice_id = :id AND cancelled_at IS NULL)::bigint AS paye,
+       (SELECT coalesce(sum(amount), 0) FROM credit_note_allocations WHERE invoice_id = :id AND cancelled_at IS NULL)::bigint AS credite`,
     { replacements: { id: facture.id }, transaction: t }
   );
-  const montantPaye = Number(paye);
+  const montantPaye = Number(paye) + Number(credite);
   let statut;
   if (montantPaye >= Number(facture.total)) statut = 'payee';
   else if (facture.due_date < aujourdhui()) statut = 'en_retard';
   else statut = montantPaye > 0 ? 'partiellement_payee' : 'emise';
-  await facture.update({ amount_paid: montantPaye, status: statut }, { transaction: t });
+  await facture.update({ amount_paid: montantPaye, amount_credited: Number(credite), status: statut }, { transaction: t });
 
   const commande = await Order.findByPk(facture.order_id, { transaction: t, lock: t.LOCK.UPDATE });
   const vers = statut === 'payee' ? 'terminee' : 'facturee';
@@ -300,4 +319,50 @@ async function recalculerStatut(facture, t, acteur = null) {
   return statut;
 }
 
-module.exports = { lister, detail, charger, emettre, annuler, recalculerStatut, versApi, lignesFacture };
+/**
+ * Avoirs puis acomptes disponibles d'un partenariat, imputés sur ses factures
+ * ouvertes et non bloquées. Chargés à l'appel : ces modules dépendent
+ * eux-mêmes de celui-ci.
+ */
+async function imputerToutCredit(partnershipId, t, acteur) {
+  await require('../../avoir/service/avoir.service.js').imputerAvoirs(partnershipId, t, acteur);
+  await require('../../paiement/service/paiement.service.js').imputerCredits(partnershipId, t, acteur);
+}
+
+/**
+ * Décision de l'acheteur sur une facture en écart :
+ *   - ACCEPTER l'écart : la facture devient payable (crédits disponibles imputés) ;
+ *   - CONTESTER : la facture reste bloquée ; le fournisseur l'annule et en émet une conforme.
+ */
+async function deciderEcart(id, companyId, user, { decision, comment = null }) {
+  await sequelize.transaction(async (t) => {
+    const { ressource: facture } = await charger(id, companyId, { transaction: t, lock: t.LOCK.UPDATE }, 'acheteur');
+    if (facture.status === 'annulee' || !R.estBloquee(facture)) {
+      throw new ConflictError("Cette facture n'est pas en écart de rapprochement.", 'AUCUN_ECART');
+    }
+    if (decision === 'conteste' && facture.match_status === 'conteste') {
+      throw new ConflictError('Cette facture est déjà contestée.', 'STATUT_INCHANGE');
+    }
+    const statut = decision === 'accepte' ? 'accepte' : 'conteste';
+    await facture.update({
+      match_status: statut, match_decided_at: new Date(), match_decided_by: user.id, match_comment: comment,
+    }, { transaction: t });
+    if (statut === 'accepte') await imputerToutCredit(facture.partnership_id, t, user);
+    await journaliser({ action: `facture.ecart_${statut}`, entityType: 'invoice', entityId: id, companyId, details: { number: facture.number, commentaire: comment } }, t);
+    const client = await Company.findByPk(companyId, { attributes: ['name'], transaction: t });
+    await notifierEntreprise(t, facture.supplier_company_id, P.FACTURES_EMETTRE, {
+      type: 'facture_ecart',
+      titre: `${statut === 'accepte' ? 'Écart accepté' : 'Facture contestée'} — ${facture.number}`,
+      corps: statut === 'accepte'
+        ? `${client.name} a accepté l'écart de la facture ${facture.number} : elle est payable.`
+        : `${client.name} conteste la facture ${facture.number}${comment ? ` : ${comment}` : ''}. Annulez-la et émettez une facture conforme.`,
+      donnees: { invoice_id: id, order_id: facture.order_id },
+    });
+    await synchroniser(t, [facture.supplier_company_id, facture.buyer_company_id], 'facture', { invoice_id: id, status: facture.status, match_status: statut });
+  });
+  return detail(id, companyId);
+}
+
+module.exports = {
+  lister, detail, charger, emettre, annuler, recalculerStatut, versApi, lignesFacture, deciderEcart, imputerToutCredit,
+};

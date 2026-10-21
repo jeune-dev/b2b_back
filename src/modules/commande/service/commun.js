@@ -98,11 +98,19 @@ async function apresChangement(t, commande) {
 const ACTIONS = Object.freeze({
   acheteur: {
     brouillon: ['modifier', 'envoyer', 'annuler'],
-    envoyee: ['annuler'],
-    en_attente_validation: ['annuler'],
-    proposition_modifiee: ['accepter_proposition', 'refuser_proposition', 'demander_modification', 'annuler'],
-    validee: ['annuler'],
-    livree: ['confirmer_reception'],
+    envoyee: ['annuler', 'recommander'],
+    en_attente_validation: ['annuler', 'recommander'],
+    proposition_modifiee: ['accepter_proposition', 'refuser_proposition', 'demander_modification', 'annuler', 'recommander'],
+    validee: ['annuler', 'recommander'],
+    en_preparation: ['recommander'],
+    prete: ['recommander'],
+    livree_partiellement: ['receptionner', 'solder_reliquat', 'ouvrir_litige', 'recommander'],
+    livree: ['confirmer_reception', 'ouvrir_litige', 'recommander'],
+    reception_confirmee: ['ouvrir_litige', 'recommander'],
+    facturee: ['ouvrir_litige', 'recommander'],
+    terminee: ['ouvrir_litige', 'recommander'],
+    refusee: ['recommander'],
+    annulee: ['recommander'],
   },
   fournisseur: {
     envoyee: ['prendre_en_charge', 'accepter', 'proposer', 'refuser'],
@@ -110,11 +118,19 @@ const ACTIONS = Object.freeze({
     validee: ['en_preparation', 'prete', 'livrer', 'annuler'],
     en_preparation: ['prete', 'livrer'],
     prete: ['livrer'],
+    livree_partiellement: ['livrer', 'solder_reliquat'],
     reception_confirmee: ['facturer'],
   },
 });
 
-const actionsPossibles = (statut, cote) => ACTIONS[cote]?.[statut] || [];
+/** Brouillon soumis au circuit d'approbation : il attend une décision, il ne part pas. */
+const ACTIONS_EN_APPROBATION = Object.freeze(['modifier', 'annuler', 'approuver', 'rejeter_approbation']);
+
+/** @param {{ status: string, approval_status?: string }} commande */
+function actionsPossibles(commande, cote) {
+  if (cote === 'acheteur' && commande.status === 'brouillon' && commande.approval_status === 'en_attente') return ACTIONS_EN_APPROBATION;
+  return ACTIONS[cote]?.[commande.status] || [];
+}
 
 const ATTRIBUTS_ENTREPRISE = ['id', 'name', 'legal_name', 'city', 'address', 'phone', 'email', 'ninea', 'rccm', 'logo_document_id'];
 

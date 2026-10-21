@@ -25,6 +25,8 @@ const P = Object.freeze({
   PRODUITS_GERER: 'produits.gerer',
   ACHATS_LIRE: 'achats.lire',
   ACHATS_GERER: 'achats.gerer',
+  // Circuit d'approbation interne des bons de commande (seuils de montant).
+  ACHATS_APPROUVER: 'achats.approuver',
   RECEPTION_CONFIRMER: 'reception.confirmer',
   VENTES_LIRE: 'ventes.lire',
   VENTES_TRAITER: 'ventes.traiter',
@@ -68,7 +70,7 @@ const PERMISSIONS_PAR_ROLE = Object.freeze({
   administrateur: ENTREPRISE,
   responsable_achats: [
     P.DASHBOARD_LIRE, P.PARTENAIRES_LIRE, P.PARTENAIRES_GERER, P.CATALOGUE_LIRE,
-    P.ACHATS_LIRE, P.ACHATS_GERER, P.RECEPTION_CONFIRMER,
+    P.ACHATS_LIRE, P.ACHATS_GERER, P.ACHATS_APPROUVER, P.RECEPTION_CONFIRMER,
     P.FACTURES_LIRE, P.PAIEMENTS_LIRE, P.STATISTIQUES_LIRE, P.DOCUMENTS_LIRE, P.DOCUMENTS_ECRIRE,
   ],
   responsable_commandes: [

@@ -13,7 +13,8 @@ const { aujourdhui } = require('../../../utils/dates.js');
  *   facturé  = factures en vigueur (non annulées) ;
  *   payé     = paiements CONFIRMÉS (un paiement seulement déclaré par
  *              l'acheteur n'est pas encore compté) ;
- *   solde    = facturé − payé (négatif : avoir / acompte du client) ;
+ *   avoirs   = avoirs émis par le fournisseur (litiges, gestes commerciaux) ;
+ *   solde    = facturé − payé − avoirs (négatif : crédit du client) ;
  *   en retard = reste dû des factures dont l'échéance est passée.
  *
  * Une requête d'agrégat par vue, regroupée par partenariat (jamais une
@@ -36,10 +37,12 @@ const REQUETE = (cote) => `
            sum(amount) FILTER (WHERE status = 'declare') AS declare,
            max(paid_on) FILTER (WHERE status = 'confirme') AS dernier_paiement
       FROM payments GROUP BY partnership_id
+  ), a AS (
+    SELECT partnership_id, sum(total) AS avoirs FROM credit_notes WHERE status = 'emis' GROUP BY partnership_id
   )
   SELECT ps.id AS partnership_id, ps.status, c.id AS partner_id, c.name AS partner_name, c.logo_document_id,
-         coalesce(f.facture, 0) AS invoiced, coalesce(p.paye, 0) AS paid,
-         coalesce(f.facture, 0) - coalesce(p.paye, 0) AS balance,
+         coalesce(f.facture, 0) AS invoiced, coalesce(p.paye, 0) AS paid, coalesce(a.avoirs, 0) AS credited,
+         coalesce(f.facture, 0) - coalesce(p.paye, 0) - coalesce(a.avoirs, 0) AS balance,
          coalesce(f.reste_du, 0) AS open_amount, coalesce(f.en_retard, 0) AS overdue,
          coalesce(p.declare, 0) AS declared_pending,
          coalesce(f.factures_ouvertes, 0)::int AS open_invoices, coalesce(f.factures_payees, 0)::int AS paid_invoices,
@@ -48,8 +51,9 @@ const REQUETE = (cote) => `
     JOIN companies c ON c.id = ps.${cote === 'acheteur' ? 'supplier_company_id' : 'buyer_company_id'}
     LEFT JOIN f ON f.partnership_id = ps.id
     LEFT JOIN p ON p.partnership_id = ps.id
+    LEFT JOIN a ON a.partnership_id = ps.id
    WHERE ps.${cote === 'acheteur' ? 'buyer_company_id' : 'supplier_company_id'} = :companyId
-     AND (f.facture IS NOT NULL OR p.paye IS NOT NULL OR p.declare IS NOT NULL OR ps.status = 'actif')
+     AND (f.facture IS NOT NULL OR p.paye IS NOT NULL OR p.declare IS NOT NULL OR a.avoirs IS NOT NULL OR ps.status = 'actif')
    ORDER BY balance DESC, c.name ASC`;
 
 function synthese(lignes) {
@@ -60,6 +64,7 @@ function synthese(lignes) {
     partner: { id: l.partner_id, name: l.partner_name, logo_url: l.logo_document_id ? `/api/v1/documents/${l.logo_document_id}/fichier` : null },
     invoiced: nombre(l.invoiced),
     paid: nombre(l.paid),
+    credited: nombre(l.credited),
     balance: nombre(l.balance),
     open_amount: nombre(l.open_amount),
     overdue: nombre(l.overdue),
@@ -74,6 +79,7 @@ function synthese(lignes) {
     totals: {
       invoiced: somme('invoiced'),
       paid: somme('paid'),
+      credited: somme('credited'),
       balance: somme('balance'),
       overdue: somme('overdue'),
       declared_pending: somme('declared_pending'),
@@ -96,8 +102,8 @@ async function creances(companyId) {
 }
 
 /**
- * Relevé de compte d'un partenariat : factures (débit) et paiements
- * confirmés (crédit) dans l'ordre chronologique, avec solde progressif et
+ * Relevé de compte d'un partenariat : factures (débit), paiements
+ * confirmés et avoirs (crédit) dans l'ordre chronologique, avec solde progressif et
  * solde d'ouverture avant la période.
  */
 async function releve(partnershipId, companyId, { du = null, au = null } = {}) {
@@ -115,6 +121,9 @@ async function releve(partnershipId, companyId, { du = null, au = null } = {}) {
        UNION ALL
        SELECT 'paiement' AS type, id, reference, paid_on::text AS date, 0 AS debit, amount AS credit, status, NULL::text AS due_date, created_at
          FROM payments WHERE partnership_id = :id AND status = 'confirme'
+       UNION ALL
+       SELECT 'avoir' AS type, id, number AS reference, issue_date::text AS date, 0 AS debit, total AS credit, status, NULL::text AS due_date, created_at
+         FROM credit_notes WHERE partnership_id = :id AND status = 'emis'
      ) m WHERE m.date <= :fin ORDER BY m.date ASC, m.created_at ASC, m.reference ASC`,
     { replacements: { id: partenariat.id, fin }, type: QueryTypes.SELECT }
   );

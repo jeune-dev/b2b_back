@@ -15,12 +15,16 @@ const requireRole = (...roles) => decrire((req, res, next) => {
   return next(new ForbiddenError("Vous n'avez pas les droits nécessaires pour cette action.", 'ROLE_INSUFFISANT'));
 }, { type: 'role', roles });
 
-/** Le compte doit détenir la permission (RBAC fin, `roles.permissions`). */
-const requirePermission = (permission) => decrire((req, res, next) => {
+/**
+ * Le compte doit détenir la permission (RBAC fin, `roles.permissions`) — ou
+ * l'UNE des permissions citées (ex. un litige s'ouvre par qui réceptionne OU
+ * par qui gère les achats).
+ */
+const requirePermission = (...permissions) => decrire((req, res, next) => {
   if (!req.user) return next(new UnauthorizedError());
-  if (req.permissions?.has(permission)) return next();
-  return next(new ForbiddenError("Vous n'avez pas la permission d'effectuer cette action.", 'PERMISSION_REFUSEE', { permission }));
-}, { type: 'permission', permission });
+  if (permissions.some((p) => req.permissions?.has(p))) return next();
+  return next(new ForbiddenError("Vous n'avez pas la permission d'effectuer cette action.", 'PERMISSION_REFUSEE', { permission: permissions.join(' | ') }));
+}, { type: 'permission', permission: permissions.join(' ou ') });
 
 /**
  * Routes de l'espace entreprise : le compte doit appartenir à une entreprise

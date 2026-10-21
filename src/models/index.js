@@ -44,6 +44,21 @@ const Invoice = require('./invoice.model.js');
 const InvoiceLine = require('./invoiceLine.model.js');
 const Payment = require('./payment.model.js');
 const PaymentAllocation = require('./paymentAllocation.model.js');
+const ProductPriceTier = require('./productPriceTier.model.js');
+const PriceList = require('./priceList.model.js');
+const PriceListItem = require('./priceListItem.model.js');
+const StockMovement = require('./stockMovement.model.js');
+const PurchaseList = require('./purchaseList.model.js');
+const PurchaseListItem = require('./purchaseListItem.model.js');
+const OrderApproval = require('./orderApproval.model.js');
+const Delivery = require('./delivery.model.js');
+const DeliveryLine = require('./deliveryLine.model.js');
+const CreditNote = require('./creditNote.model.js');
+const CreditNoteLine = require('./creditNoteLine.model.js');
+const CreditNoteAllocation = require('./creditNoteAllocation.model.js');
+const Claim = require('./claim.model.js');
+const ClaimLine = require('./claimLine.model.js');
+const InvoiceReminder = require('./invoiceReminder.model.js');
 
 const fk = (foreignKey, as) => ({ foreignKey, as });
 
@@ -112,6 +127,51 @@ Payment.belongsTo(Partnership, fk('partnership_id', 'partnership'));
 Payment.hasMany(PaymentAllocation, fk('payment_id', 'allocations'));
 PaymentAllocation.belongsTo(Payment, fk('payment_id', 'payment'));
 PaymentAllocation.belongsTo(Invoice, fk('invoice_id', 'invoice'));
+Invoice.hasMany(InvoiceReminder, fk('invoice_id', 'reminders'));
+InvoiceReminder.belongsTo(Invoice, fk('invoice_id', 'invoice'));
+
+// ── Tarification et stock ─────────────────────────────────────────────────
+Product.hasMany(ProductPriceTier, fk('product_id', 'priceTiers'));
+ProductPriceTier.belongsTo(Product, fk('product_id', 'product'));
+PriceList.hasMany(PriceListItem, fk('price_list_id', 'items'));
+PriceListItem.belongsTo(PriceList, fk('price_list_id', 'priceList'));
+PriceListItem.belongsTo(Product, fk('product_id', 'product'));
+Partnership.belongsTo(PriceList, fk('price_list_id', 'priceList'));
+StockMovement.belongsTo(Product, fk('product_id', 'product'));
+StockMovement.belongsTo(User, fk('created_by', 'author'));
+
+// ── Achats : listes, approbations ─────────────────────────────────────────
+PurchaseList.belongsTo(Company, fk('supplier_company_id', 'supplier'));
+PurchaseList.hasMany(PurchaseListItem, fk('list_id', 'items'));
+PurchaseListItem.belongsTo(PurchaseList, fk('list_id', 'list'));
+PurchaseListItem.belongsTo(Product, fk('product_id', 'product'));
+Order.hasMany(OrderApproval, fk('order_id', 'approvals'));
+OrderApproval.belongsTo(User, fk('user_id', 'user'));
+
+// ── Livraisons, litiges, avoirs ───────────────────────────────────────────
+Order.hasMany(Delivery, fk('order_id', 'deliveries'));
+Delivery.belongsTo(Order, fk('order_id', 'order'));
+Delivery.hasMany(DeliveryLine, fk('delivery_id', 'lines'));
+DeliveryLine.belongsTo(Delivery, fk('delivery_id', 'delivery'));
+Delivery.belongsTo(Company, fk('supplier_company_id', 'supplier'));
+Delivery.belongsTo(Company, fk('buyer_company_id', 'buyer'));
+Claim.belongsTo(Order, fk('order_id', 'order'));
+Claim.belongsTo(Company, fk('buyer_company_id', 'buyer'));
+Claim.belongsTo(Company, fk('supplier_company_id', 'supplier'));
+Claim.belongsTo(Delivery, fk('delivery_id', 'delivery'));
+Claim.belongsTo(CreditNote, fk('credit_note_id', 'creditNote'));
+Claim.hasMany(ClaimLine, fk('claim_id', 'lines'));
+ClaimLine.belongsTo(Claim, fk('claim_id', 'claim'));
+CreditNote.belongsTo(Company, fk('supplier_company_id', 'supplier'));
+CreditNote.belongsTo(Company, fk('buyer_company_id', 'buyer'));
+CreditNote.belongsTo(Order, fk('order_id', 'order'));
+CreditNote.belongsTo(Invoice, fk('invoice_id', 'invoice'));
+CreditNote.hasMany(CreditNoteLine, fk('credit_note_id', 'lines'));
+CreditNote.hasMany(CreditNoteAllocation, fk('credit_note_id', 'allocations'));
+CreditNoteLine.belongsTo(CreditNote, fk('credit_note_id', 'creditNote'));
+CreditNoteAllocation.belongsTo(CreditNote, fk('credit_note_id', 'creditNote'));
+CreditNoteAllocation.belongsTo(Invoice, fk('invoice_id', 'invoice'));
+Invoice.hasMany(CreditNoteAllocation, fk('invoice_id', 'creditAllocations'));
 
 module.exports = {
   sequelize,
@@ -122,4 +182,6 @@ module.exports = {
   Partnership, PartnershipInvitation, ProductCategory, Product,
   Order, OrderVersion, OrderLine, OrderEvent,
   DocumentTemplate, Invoice, InvoiceLine, Payment, PaymentAllocation,
+  ProductPriceTier, PriceList, PriceListItem, StockMovement, PurchaseList, PurchaseListItem, OrderApproval,
+  Delivery, DeliveryLine, CreditNote, CreditNoteLine, CreditNoteAllocation, Claim, ClaimLine, InvoiceReminder,
 };

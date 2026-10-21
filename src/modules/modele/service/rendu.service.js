@@ -60,7 +60,8 @@ function blocEntreprise(titre, c) {
  * @param {object} p.emetteur, p.destinataire  entreprises
  */
 async function rendre({
-  modele, emetteur, destinataire, titre, numero, references, lignes, totaux, lettres = null, mentions = [], filigrane = null,
+  modele, emetteur, destinataire, titre, numero, references, lignes, totaux = null, lettres = null, mentions = [], filigrane = null,
+  tableau = null, signatures = false,
 }) {
   const [fond, logo] = await Promise.all([
     modele?.background_document_id ? contenuSur(modele.background_document_id) : null,
@@ -86,22 +87,35 @@ async function rendre({
     doc.y = Math.max(doc.y, haut + 70);
     if (modele?.header_text) a.paragraphe(modele.header_text, { taille: 9 });
     doc.moveDown(0.5);
-    a.deuxColonnes(blocEntreprise(titre === 'FACTURE' ? 'Fournisseur' : 'Acheteur', emetteur), blocEntreprise(titre === 'FACTURE' ? 'Client' : 'Fournisseur', destinataire));
+    // Le bon de commande est émis par l'acheteur ; facture, avoir et bon de livraison par le fournisseur.
+    const [gauche, droite] = titre === 'BON DE COMMANDE' ? ['Acheteur', 'Fournisseur'] : ['Fournisseur', 'Client'];
+    a.deuxColonnes(blocEntreprise(gauche, emetteur), blocEntreprise(droite, destinataire));
     a.sousTitre('Références');
     a.champs(references);
     doc.moveDown(0.5);
-    a.tableau(
-      ['N°', 'Référence', 'Désignation', 'Unité', 'Qté', 'PU HT', 'TVA', 'Total HT'],
-      lignes.map((l) => [
-        l.line_no, l.reference || '', `${l.name}${l.note ? `\n${l.note}` : ''}`, UNITE[l.unit] || l.unit, formatQuantite(l.quantity),
-        formatFcfa(l.unit_price), `${Number(l.tax_rate)} %`, formatFcfa(l.line_subtotal),
-      ]),
-      [4, 10, 28, 8, 7, 13, 6, 14],
-      ['left', 'left', 'left', 'left', 'right', 'right', 'right', 'right']
-    );
-    a.totaux(totaux);
+    if (tableau) {
+      a.tableau(tableau.entetes, tableau.lignes, tableau.largeurs, tableau.alignements);
+    } else {
+      a.tableau(
+        ['N°', 'Référence', 'Désignation', 'Unité', 'Qté', 'PU HT', 'TVA', 'Total HT'],
+        lignes.map((l) => [
+          l.line_no, l.reference || '', `${l.name}${l.note ? `\n${l.note}` : ''}`, UNITE[l.unit] || l.unit, formatQuantite(l.quantity),
+          formatFcfa(l.unit_price), `${Number(l.tax_rate)} %`, formatFcfa(l.line_subtotal),
+        ]),
+        [4, 10, 28, 8, 7, 13, 6, 14],
+        ['left', 'left', 'left', 'left', 'right', 'right', 'right', 'right']
+      );
+    }
+    if (totaux) a.totaux(totaux);
     if (lettres) a.paragraphe(lettres, { taille: 9 });
     for (const m of mentions.filter(Boolean)) a.paragraphe(m, { taille: 9 });
+    if (signatures) {
+      doc.moveDown(1.5);
+      a.deuxColonnes(
+        { titre: 'Remis par (fournisseur)', nom: '', lignes: ['Nom et signature :'] },
+        { titre: 'Reçu par (client)', nom: '', lignes: ['Nom, date et signature :'] }
+      );
+    }
   }, {
     titre: `${titre} ${numero}`,
     auteur: emetteur.name,
@@ -160,6 +174,80 @@ async function bonDeCommande(orderId, companyId, cote, versionDemandee) {
     lettres: `Arrêté le présent bon de commande à la somme de ${enLettres(version.total)} francs CFA.`,
   });
   return { nom: nomFichier('bon-de-commande', commande.number), contenu };
+}
+
+/**
+ * Bon de livraison d'une livraison (§ 13) : quantités commandées, livrées
+ * par CE bon, livrées au total ; cadres de signature. Gabarit du fournisseur
+ * (son modèle de facture actif : même logo, mêmes couleurs).
+ */
+async function bonDeLivraison({ commande, livraison, lignesCommande }) {
+  const [fournisseur, acheteur, modele] = await Promise.all([
+    Company.findByPk(commande.supplier_company_id, { attributes: ATTRIBUTS, paranoid: false }),
+    Company.findByPk(commande.buyer_company_id, { attributes: ATTRIBUTS, paranoid: false }),
+    modeleActif(commande.supplier_company_id, 'facture'),
+  ]);
+  const commandees = new Map(lignesCommande.map((l) => [l.line_no, l]));
+  const contenu = await rendre({
+    modele,
+    emetteur: fournisseur,
+    destinataire: acheteur,
+    titre: 'BON DE LIVRAISON',
+    numero: livraison.number,
+    filigrane: livraison.status === 'receptionnee'
+      ? `Réceptionné le ${formatFr(aujourdhui(livraison.received_at))}`
+      : `Livraison n° ${livraison.delivery_no}`,
+    references: [
+      ['Date de livraison', formatFr(aujourdhui(livraison.shipped_at))],
+      ['Bon de commande', commande.number],
+      ['Référence client', commande.buyer_reference],
+      ['Adresse de livraison', commande.delivery_address],
+      ['Transporteur', livraison.carrier],
+      ['Note', livraison.note],
+    ],
+    lignes: [],
+    tableau: {
+      entetes: ['N°', 'Référence', 'Désignation', 'Unité', 'Commandé', 'Livré (ce bon)', 'Livré (total)'],
+      lignes: livraison.lines.map((l) => {
+        const c = commandees.get(l.line_no);
+        return [l.line_no, l.reference || '', l.name, UNITE[l.unit] || l.unit, c ? formatQuantite(c.quantity) : '', formatQuantite(l.quantity), c ? formatQuantite(c.delivered_quantity) : ''];
+      }),
+      largeurs: [4, 12, 34, 9, 11, 13, 13],
+      alignements: ['left', 'left', 'left', 'left', 'right', 'right', 'right'],
+    },
+    mentions: [livraison.reception_note && `Observations du client : ${livraison.reception_note}`],
+    signatures: true,
+  });
+  return { nom: nomFichier('bon-de-livraison', livraison.number), contenu };
+}
+
+/** Avoir (note de crédit) du fournisseur, au modèle de ses factures. */
+async function avoir(note, lignes) {
+  const [fournisseur, acheteur, factureLiee, commande, modele] = await Promise.all([
+    Company.findByPk(note.supplier_company_id, { attributes: ATTRIBUTS, paranoid: false }),
+    Company.findByPk(note.buyer_company_id, { attributes: ATTRIBUTS, paranoid: false }),
+    note.invoice_id ? Invoice.findByPk(note.invoice_id, { attributes: ['number'] }) : null,
+    note.order_id ? Order.findByPk(note.order_id, { attributes: ['number'] }) : null,
+    note.template_id ? DocumentTemplate.findByPk(note.template_id) : null,
+  ]);
+  const contenu = await rendre({
+    modele,
+    emetteur: fournisseur,
+    destinataire: acheteur,
+    titre: 'AVOIR',
+    numero: note.number,
+    filigrane: note.status === 'annule' ? 'ANNULÉ' : null,
+    references: [
+      ["Date de l'avoir", formatFr(note.issue_date)],
+      ['Facture concernée', factureLiee?.number],
+      ['Bon de commande', commande?.number],
+      ['Motif', note.reason],
+    ],
+    lignes,
+    totaux: paireTotaux(note),
+    lettres: `Arrêté le présent avoir à la somme de ${enLettres(note.total)} francs CFA toutes taxes comprises, à déduire de vos règlements.`,
+  });
+  return { nom: nomFichier('avoir', note.number), contenu };
 }
 
 /** Données d'une facture prêtes pour le rendu. */
@@ -235,4 +323,6 @@ async function apercu(modeleId, companyId) {
   return { nom: nomFichier('apercu', `${modele.type}-v${modele.version}`), contenu };
 }
 
-module.exports = { bonDeCommande, facture, rendreFacture, apercu };
+module.exports = {
+  bonDeCommande, bonDeLivraison, avoir, facture, rendreFacture, apercu,
+};

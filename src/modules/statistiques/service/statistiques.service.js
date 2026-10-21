@@ -5,6 +5,7 @@ const sequelize = require('../../../config/db.js');
 const { STATUT_COMMANDE, STATUT_FACTURE, MODE_PAIEMENT, STATUT_PAIEMENT } = require('../../../config/enums.js');
 const { aujourdhui, debutMois, ajouterMois } = require('../../../utils/dates.js');
 const { versCsv } = require('./csv.js');
+const comptabilite = require('./comptabilite.service.js');
 
 /**
  * Statistiques (§ 21) et exports CSV (§ 27 « intégration comptable » : une
@@ -104,6 +105,8 @@ const conditionSens = (sens, alias) => {
 
 async function exporter(companyId, type, filtres) {
   const b = bornes(filtres);
+  // Journaux comptables SYSCOHADA (ventes, achats, trésorerie).
+  if (comptabilite.JOURNAUX.includes(type)) return comptabilite.journal(companyId, type, b);
   const remplacements = { companyId, ...b, max: EXPORT_MAX };
   if (type === 'commandes') {
     const lignes = await sequelize.query(

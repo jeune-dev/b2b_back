@@ -3,7 +3,7 @@
 const {
   Joi, uuid, montant, dateIso, recherche, tri, pagination,
 } = require('../../../validations/common.js');
-const { codes, STATUT_COMMANDE } = require('../../../config/enums.js');
+const { codes, STATUT_COMMANDE, STATUT_APPROBATION } = require('../../../config/enums.js');
 const { quantite } = require('../../catalogue/validation/catalogue.validation.js');
 
 /**
@@ -14,11 +14,14 @@ const revision = Joi.number().integer().min(1);
 const commentaire = Joi.string().trim().max(2000);
 const MAX_LIGNES = 500;
 
+/** Ligne saisie par l'acheteur : produit désigné par son identifiant OU par sa référence (saisie rapide). */
 const ligneAcheteur = Joi.object({
-  product_id: uuid.required(),
+  product_id: uuid,
+  reference: Joi.string().trim().min(1).max(60),
   quantity: quantite.greater(0).required(),
   comment: Joi.string().trim().max(500).allow('', null),
-});
+}).xor('product_id', 'reference')
+  .messages({ 'object.xor': 'Chaque ligne désigne un produit par product_id OU par reference' });
 
 const entete = {
   buyer_reference: Joi.string().trim().max(60).allow('', null),
@@ -41,6 +44,13 @@ const modificationSchema = Joi.object({
 }).min(1);
 
 const revisionSchema = Joi.object({ revision });
+
+/** Import CSV : champs texte du multipart (le fichier est dans « fichier »). */
+const importSchema = Joi.object({ supplier_id: uuid.required(), ...entete });
+
+/** Décisions du circuit d'approbation interne. */
+const approbationSchema = Joi.object({ comment: commentaire.allow('', null), revision });
+const rejetApprobationSchema = Joi.object({ comment: commentaire.min(3).required(), revision });
 
 const acceptationSchema = Joi.object({ revision, comment: commentaire.allow('', null) });
 
@@ -91,8 +101,22 @@ const statutSchema = Joi.object({
 /** Champs multipart de la livraison (chaînes converties par Joi). */
 const livraisonSchema = Joi.object({
   note: Joi.string().trim().max(1000).allow('', null),
+  carrier: Joi.string().trim().max(120).allow('', null),
   revision,
 });
+
+/** Livraison (éventuellement partielle) : quantités expédiées par ligne de la commande validée. */
+const expeditionSchema = Joi.object({
+  lines: Joi.array().items(Joi.object({
+    line_no: Joi.number().integer().min(1).required(),
+    quantity: quantite.greater(0).required(),
+  })).min(1).max(MAX_LIGNES).unique('line_no'),
+  note: Joi.string().trim().max(1000).allow('', null),
+  carrier: Joi.string().trim().max(120).allow('', null),
+  revision,
+});
+
+const paramLivraison = Joi.object({ id: uuid.required(), livraisonId: uuid.required() });
 
 const receptionSchema = Joi.object({
   lines: Joi.array().items(Joi.object({
@@ -123,6 +147,7 @@ const filtres = {
 const listeAchatsSchema = Joi.object({
   ...filtres,
   supplier_id: uuid,
+  approbation: Joi.string().valid(...codes(STATUT_APPROBATION)),
   tri: tri(['created_at', 'sent_at', 'total', 'number', 'updated_at']),
 });
 
@@ -135,5 +160,5 @@ const listeVentesSchema = Joi.object({
 module.exports = {
   creationSchema, modificationSchema, revisionSchema, acceptationSchema, propositionSchema, demandeModificationSchema,
   motifSchema, statutSchema, livraisonSchema, receptionSchema, commentaireSchema, pieceJointeSchema, pdfSchema,
-  listeAchatsSchema, listeVentesSchema,
+  listeAchatsSchema, listeVentesSchema, importSchema, approbationSchema, rejetApprobationSchema, expeditionSchema, paramLivraison,
 };

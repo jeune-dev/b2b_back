@@ -50,6 +50,19 @@ const ATTENDUS = [
   ['subscription_plans', 'status', E.STATUT_PLAN],
   ['subscription_payments', 'status', E.STATUT_PAIEMENT_ABONNEMENT],
   ['device_tokens', 'platform', E.PLATEFORME_APPAREIL],
+  ['orders', 'approval_status', E.STATUT_APPROBATION],
+  ['orders', 'backorder_closed_by_side', E.COTE],
+  ['order_approvals', 'decision', E.DECISION_APPROBATION],
+  ['deliveries', 'status', E.STATUT_LIVRAISON],
+  ['delivery_lines', 'unit', E.UNITE],
+  ['claims', 'type', E.TYPE_LITIGE],
+  ['claims', 'status', E.STATUT_LITIGE],
+  ['claim_lines', 'unit', E.UNITE],
+  ['credit_notes', 'status', E.STATUT_AVOIR],
+  ['credit_note_lines', 'unit', E.UNITE],
+  ['invoices', 'match_status', E.STATUT_RAPPROCHEMENT],
+  ['invoice_reminders', 'channel', E.CANAL_RELANCE],
+  ['stock_movements', 'type', E.TYPE_MOUVEMENT_STOCK],
 ];
 
 /** Valeurs d'une contrainte CHECK `col IN ('a', 'b')` (forme déparsée par PostgreSQL). */

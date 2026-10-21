@@ -42,4 +42,14 @@ function versCsv(sections) {
   return BOM + sortie.join(FIN_LIGNE);
 }
 
-module.exports = { versCsv, cellule, BOM };
+/**
+ * Tableau simple (une ligne d'en-têtes puis les lignes), sans titre : format
+ * relu tel quel par les imports (catalogue) et par les logiciels comptables.
+ */
+function tableauCsv(entetes, lignes) {
+  return BOM + [ligne(entetes), ...lignes.map(ligne)].join(FIN_LIGNE) + FIN_LIGNE;
+}
+
+module.exports = {
+  versCsv, tableauCsv, cellule, BOM,
+};

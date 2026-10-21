@@ -73,16 +73,16 @@ action d'acheteur par une entreprise uniquement fournisseur, ou l'inverse
 | Paiements, montants dus, créances | `/paiements`, `/situation/dettes`, `/situation/creances` |
 | Authentification, notifications, documents, modèles, synchronisation, rôles, administration | `/auth`, `/notifications`, `/documents`, `/modeles-documents`, `/evenements`, `/utilisateurs`, `/admin/*` |
 
-## 4. Modèle de données (30 tables)
+## 4. Modèle de données (45 tables)
 
 | Domaine | Tables |
 |---|---|
 | Socle | `roles`, `users`, `refresh_tokens`, `password_resets`, `device_tokens`, `platform_settings`, `idempotency_keys`, `counters`, `audit_logs`, `notifications`, `documents` |
 | Entreprises | `companies`, `company_members`, `member_invitations` |
 | Abonnement | `subscription_plans`, `subscriptions`, `subscription_payments` |
-| Réseau et catalogue | `partnerships`, `partnership_invitations`, `product_categories`, `products` |
-| Commandes | `orders`, `order_versions`, `order_lines`, `order_events` |
-| Facturation et paiements | `document_templates`, `invoices`, `invoice_lines`, `payments`, `payment_allocations` |
+| Réseau et catalogue | `partnerships`, `partnership_invitations`, `product_categories`, `products`, `product_price_tiers`, `price_lists`, `price_list_items`, `stock_movements` |
+| Commandes | `orders`, `order_versions`, `order_lines`, `order_events`, `order_approvals`, `purchase_lists`, `purchase_list_items`, `deliveries`, `delivery_lines`, `claims`, `claim_lines` |
+| Facturation et paiements | `document_templates`, `invoices`, `invoice_lines`, `invoice_reminders`, `payments`, `payment_allocations`, `credit_notes`, `credit_note_lines`, `credit_note_allocations` |
 
 Les invariants sont garantis par la base (CHECK, UNIQUE, index partiels,
 clés étrangères) : montants positifs, une facture active par commande, une
@@ -107,3 +107,29 @@ par un test dédié.
   (Essentiel, Business, Entreprise) modifiables par le super admin ; essai de
   30 jours paramétrable.
 - **Montants** en FCFA entiers ; TVA par ligne (taux du produit).
+
+## 6. Fonctionnalités complémentaires (au-delà du cahier des charges)
+
+Ajoutées après comparaison avec les plateformes du même type (OrderEase,
+Pepperi, Choco, Precoro, Spendesk ; Wasoko, TradeDepot, Sabi en Afrique).
+Migration `20261021000005-achats-avances.js`.
+
+| Fonctionnalité | Implémentation |
+|---|---|
+| Recommander en un clic | `POST /achats/:id/recommander` : nouveau brouillon aux prix actuels ; produits retirés, en rupture ou hors règles de quantité écartés et listés (`skipped_lines`) ; `orders.source_order_id` |
+| Listes d'achat habituelles | module `listeAchat`, `/listes-achat` (tables `purchase_lists`, `purchase_list_items`) : quantité par défaut ou **stock cible** (la quantité commandée = cible − stock constaté, arrondie au minimum et au multiple du fournisseur) ; création depuis une commande passée ; `POST /listes-achat/:id/commander` |
+| Saisie rapide et import | lignes par `reference` au lieu de `product_id` ; `POST /achats/import` (CSV « référence ; quantité [; commentaire] », UTF-8 ou Windows-1252, `;` `,` ou tabulation, tout ou rien, erreurs par ligne du fichier) — `utils/csvLecture.js` |
+| Circuit d'approbation interne | réglage `order_approval_levels` (seuils de montant → 1 à 3 approbations) ; permission `achats.approuver` ; l'envoi soumet le bon, la dernière approbation l'envoie automatiquement ; l'auteur n'approuve jamais son bon ; rejet motivé ; toute modification retire l'approbation (`order_approvals`, `orders.approval_*`) ; circuit invisible du fournisseur |
+| Livraisons partielles | `deliveries` / `delivery_lines`, statut `livree_partiellement` ; `POST /ventes/:id/livraisons` (lignes et quantités), réception par livraison `POST /achats/:id/livraisons/:livraisonId/reception`, quantités reçues cumulées pour la facture ; reliquat soldé par l'une ou l'autre partie (`/solder-reliquat`) |
+| Bon de livraison PDF | `GET …/livraisons/:livraisonId/bon-de-livraison.pdf` (commandé / livré par ce bon / livré au total, cadres de signature, modèle du fournisseur) ; BL signé joignable |
+| Retours et litiges | module `litige`, `/litiges` (`claims`, `claim_lines`) : ouverture par l'acheteur (quantité ≤ reçu non contesté), photos, acceptation par le fournisseur → **avoir** automatique (+ retour en stock facultatif), refus motivé, retrait |
+| Avoirs | module `avoir`, `/avoirs` (`credit_notes`, lignes, imputations) : imputés sur la facture concernée puis FIFO, surplus en crédit ; avoir manuel sur facture plafonné au montant facturé ; PDF ; annulation ; solde = factures − paiements − avoirs |
+| Rapprochement commande / réception / facture | `rapprochement.service.js` : facture comparée aux quantités reçues et aux prix validés (tolérance de l'acheteur `invoice_match_tolerance_percent`, défaut 2 %) ; total imprimé d'une facture transmise (`declared_total`) ; écart → **paiement bloqué** jusqu'à `accepter-ecart` ou `contester` |
+| Tarifs par client / groupe | `price_lists`, `price_list_items`, `partnerships.price_list_id` : prix propres + remise globale ; le client voit SES prix au catalogue et commande à ces prix |
+| Remises par paliers | `product_price_tiers` : remise de la plus haute quantité atteinte ; recalculée quand la quantité change, sauf prix négocié par le fournisseur |
+| Minimum / multiple / maximum | `products.min_order_quantity`, `order_multiple`, `max_order_quantity` contrôlés à la saisie du client ; `min_order_amount` du fournisseur contrôlé à l'envoi |
+| Import / export catalogue | `GET /produits/export.csv`, `GET /produits/import/modele.csv`, `POST /produits/import` (référence = clé, mise à jour ou création, catégories créées, `simulation`, tout ou rien, limite du forfait) |
+| Stock fournisseur | `stock_movements`, `products.stock_reserved`, `low_stock_threshold` : réservation à la validation (409 `STOCK_INSUFFISANT` au-delà), sortie à la livraison, libération à l'annulation / reliquat, retour client ; disponibilité affichée suivie ; alerte de stock bas une fois par franchissement ; `/produits/:id/stock`, `/mouvements-stock`, `/produits/stock/alertes` |
+| Plafond de crédit | `partnerships.credit_limit`, `block_on_overdue` (fixés par le fournisseur) : encours = factures dues + commandes engagées − acomptes − avoirs ; contrôlé à l'envoi (409 `PLAFOND_CREDIT_DEPASSE`, `RETARD_DE_PAIEMENT`) ; bloc `credit` visible des deux parties |
+| Relances graduées | `relance.service.js`, `invoice_reminders` : paliers J+3 / J+7 / J+15 (réglables, désactivables) par e-mail + notification au client débiteur, une fois par palier ; relance manuelle (une par 24 h) ; facture bloquée jamais relancée |
+| Export comptable | `comptabilite.service.js` : journaux SYSCOHADA des ventes, achats et trésorerie (`/statistiques/exports/journal_*.csv`), écritures équilibrées, comptes surchargeables (`accounting_accounts`) |

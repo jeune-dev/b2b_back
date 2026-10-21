@@ -25,6 +25,10 @@ const OrderLine = sequelize.define('OrderLine', {
   substitute_for_line_no: { type: DataTypes.INTEGER },
   comment: { type: DataTypes.STRING(500) },
   received_quantity: { type: DataTypes.DECIMAL(14, 3) },
+  base_unit_price: { type: DataTypes.BIGINT },
+  discount_percent: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 0 },
+  delivered_quantity: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
+  stock_reserved: { type: DataTypes.DECIMAL(14, 3), allowNull: false, defaultValue: 0 },
 }, {
   tableName: 'order_lines',
   createdAt: 'created_at',

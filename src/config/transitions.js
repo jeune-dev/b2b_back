@@ -21,9 +21,11 @@ const COMMANDE = Object.freeze({
   envoyee: ['en_attente_validation', 'validee', 'proposition_modifiee', 'refusee', 'annulee'],
   en_attente_validation: ['validee', 'proposition_modifiee', 'refusee', 'annulee'],
   proposition_modifiee: ['validee', 'en_attente_validation', 'annulee'],
-  validee: ['en_preparation', 'prete', 'livree', 'annulee'],
-  en_preparation: ['prete', 'livree'],
-  prete: ['livree'],
+  validee: ['en_preparation', 'prete', 'livree_partiellement', 'livree', 'annulee'],
+  en_preparation: ['prete', 'livree_partiellement', 'livree'],
+  prete: ['livree_partiellement', 'livree'],
+  // Livraisons successives ; le reliquat soldé ou la dernière livraison mènent à « livrée ».
+  livree_partiellement: ['livree'],
   livree: ['reception_confirmee'],
   reception_confirmee: ['facturee'],
   // Annulation de la facture : retour à « réception confirmée ».
@@ -36,7 +38,7 @@ const COMMANDE = Object.freeze({
 
 /** Statuts « en cours » (ni brouillon, ni close). */
 const STATUTS_EN_COURS = Object.freeze([
-  'envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation', 'prete', 'livree', 'reception_confirmee',
+  'envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation', 'prete', 'livree_partiellement', 'livree', 'reception_confirmee',
 ]);
 
 /** Statuts clos. */

@@ -3,6 +3,7 @@
 const { QueryTypes } = require('sequelize');
 const sequelize = require('../../../config/db.js');
 const { Company } = require('../../../models/index.js');
+const { EVENEMENTS_INTERNES_ACHETEUR } = require('../../../config/enums.js');
 const { aujourdhui, debutMois, ajouterMois } = require('../../../utils/dates.js');
 const cache = require('../../../utils/cache.js');
 const situation = require('../../situation/service/situation.service.js');
@@ -33,8 +34,11 @@ async function sectionAcheteur(companyId, bornes) {
          count(*) FILTER (WHERE status IN ('envoyee', 'en_attente_validation'))::int AS en_attente_fournisseur,
          count(*) FILTER (WHERE status = 'proposition_modifiee')::int AS propositions_a_traiter,
          count(*) FILTER (WHERE status IN ('validee', 'en_preparation', 'prete'))::int AS en_preparation,
-         count(*) FILTER (WHERE status = 'livree')::int AS a_receptionner,
-         count(*) FILTER (WHERE status IN ('envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation', 'prete', 'livree', 'reception_confirmee'))::int AS en_cours,
+         count(*) FILTER (WHERE status IN ('livree', 'livree_partiellement'))::int AS a_receptionner,
+         count(*) FILTER (WHERE status IN ('envoyee', 'en_attente_validation', 'proposition_modifiee', 'validee', 'en_preparation', 'prete', 'livree_partiellement', 'livree', 'reception_confirmee'))::int AS en_cours,
+         count(*) FILTER (WHERE status = 'brouillon' AND approval_status = 'en_attente')::int AS en_approbation,
+         (SELECT count(*)::int FROM claims WHERE buyer_company_id = :companyId AND status = 'ouvert') AS litiges_ouverts,
+         (SELECT count(*)::int FROM invoices WHERE buyer_company_id = :companyId AND status <> 'annulee' AND match_status IN ('ecart', 'conteste')) AS factures_bloquees,
          coalesce(sum(total) FILTER (WHERE validated_at >= :debut), 0) AS achats_valides_mois,
          (SELECT count(*)::int FROM partnerships WHERE buyer_company_id = :companyId AND status = 'actif') AS fournisseurs,
          (SELECT count(*)::int FROM invoices WHERE buyer_company_id = :companyId AND status IN ('emise', 'partiellement_payee', 'en_retard')) AS factures_a_payer,
@@ -53,7 +57,10 @@ async function sectionAcheteur(companyId, bornes) {
       proposals_to_review: c.propositions_a_traiter,
       in_preparation: c.en_preparation,
       to_receive: c.a_receptionner,
+      awaiting_internal_approval: c.en_approbation,
     },
+    open_claims: c.litiges_ouverts,
+    invoices_blocked: c.factures_bloquees,
     suppliers: c.fournisseurs,
     purchases_validated_this_month: n(c.achats_valides_mois),
     invoices: { to_pay: c.factures_a_payer, received_this_month: c.factures_recues_mois },
@@ -74,6 +81,7 @@ async function sectionFournisseur(companyId, bornes) {
          count(*) FILTER (WHERE status = 'validee')::int AS validees,
          count(*) FILTER (WHERE status = 'en_preparation')::int AS en_preparation,
          count(*) FILTER (WHERE status = 'prete')::int AS pretes,
+         count(*) FILTER (WHERE status = 'livree_partiellement')::int AS livrees_partiellement,
          count(*) FILTER (WHERE status = 'livree')::int AS livrees,
          count(*) FILTER (WHERE status = 'reception_confirmee')::int AS a_facturer,
          coalesce(sum(total) FILTER (WHERE validated_at >= :debut), 0) AS ventes_mois,
@@ -85,7 +93,10 @@ async function sectionFournisseur(companyId, bornes) {
          (SELECT coalesce(sum(amount), 0) FROM payments WHERE supplier_company_id = :companyId AND status = 'confirme' AND paid_on >= :debutJour) AS paiements_recus_mois,
          (SELECT count(*)::int FROM payments WHERE supplier_company_id = :companyId AND status = 'declare') AS paiements_a_confirmer,
          (SELECT count(*)::int FROM products WHERE company_id = :companyId AND is_active AND deleted_at IS NULL) AS produits_actifs,
-         (SELECT count(*)::int FROM products WHERE company_id = :companyId AND is_active AND deleted_at IS NULL AND availability = 'rupture') AS produits_en_rupture
+         (SELECT count(*)::int FROM products WHERE company_id = :companyId AND is_active AND deleted_at IS NULL AND availability = 'rupture') AS produits_en_rupture,
+         (SELECT count(*)::int FROM products WHERE company_id = :companyId AND is_active AND deleted_at IS NULL AND stock_quantity IS NOT NULL
+             AND low_stock_threshold IS NOT NULL AND stock_quantity - stock_reserved <= low_stock_threshold) AS produits_stock_bas,
+         (SELECT count(*)::int FROM claims WHERE supplier_company_id = :companyId AND status = 'ouvert') AS litiges_a_traiter
        FROM orders WHERE supplier_company_id = :companyId AND status <> 'brouillon'`,
       { replacements: { companyId, ...bornes }, type: QueryTypes.SELECT }
     ),
@@ -99,6 +110,7 @@ async function sectionFournisseur(companyId, bornes) {
       validated: c.validees,
       in_preparation: c.en_preparation,
       ready: c.pretes,
+      partially_delivered: c.livrees_partiellement,
       delivered_awaiting_reception: c.livrees,
       to_invoice: c.a_facturer,
     },
@@ -111,7 +123,8 @@ async function sectionFournisseur(companyId, bornes) {
     overdue: creances.totals.overdue,
     top_clients_owing: creances.partners.filter((p) => p.balance > 0).slice(0, 5),
     sales: { this_month: n(c.ventes_mois), previous_month: n(c.ventes_mois_precedent) },
-    catalog: { active_products: c.produits_actifs, out_of_stock: c.produits_en_rupture },
+    catalog: { active_products: c.produits_actifs, out_of_stock: c.produits_en_rupture, low_stock: c.produits_stock_bas },
+    claims_to_handle: c.litiges_a_traiter,
   };
 }
 
@@ -125,10 +138,10 @@ async function activites(companyId) {
        JOIN orders o ON o.id = e.order_id
        LEFT JOIN companies ac ON ac.id = e.actor_company_id
        LEFT JOIN users u ON u.id = e.actor_user_id
-      WHERE (o.buyer_company_id = :companyId OR (o.supplier_company_id = :companyId AND o.status <> 'brouillon' AND e.type NOT IN ('creation', 'modification')))
+      WHERE (o.buyer_company_id = :companyId OR (o.supplier_company_id = :companyId AND o.status <> 'brouillon' AND e.type NOT IN (:internes)))
       ORDER BY e.created_at DESC, e.id DESC
       LIMIT 10`,
-    { replacements: { companyId }, type: QueryTypes.SELECT }
+    { replacements: { companyId, internes: EVENEMENTS_INTERNES_ACHETEUR }, type: QueryTypes.SELECT }
   );
 }
 

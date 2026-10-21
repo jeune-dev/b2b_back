@@ -21,6 +21,7 @@ router.use(requireProfil('fournisseur'), (req, res, next) => { req.cote = 'fourn
 const lire = requirePermission(P.VENTES_LIRE);
 const traiter = requirePermission(P.VENTES_TRAITER);
 const id = validate(paramId, 'params');
+const livraison = validate(v.paramLivraison, 'params');
 
 router.get('/', lire, validate(v.listeVentesSchema, 'query'), paginate(), ctrl.listerVentes);
 router.get('/:id', lire, id, ctrl.detail);
@@ -34,8 +35,14 @@ router.post('/:id/proposer', traiter, id, idempotence(), validate(v.propositionS
 router.post('/:id/refuser', traiter, id, validate(v.motifSchema), ctrl.refuser);
 // § 12 — statuts opérationnels : en préparation, prête.
 router.post('/:id/statut', traiter, id, validate(v.statutSchema), ctrl.statut);
-// § 13 — livraison, avec bon de livraison facultatif (photo ou PDF).
+// § 13 — livraison de tout le reste, avec bon de livraison facultatif (photo ou PDF).
 router.post('/:id/livrer', traiter, id, recevoirFichier('justificatif', { obligatoire: false }), validate(v.livraisonSchema), idempotence(), ctrl.livrer);
+// Livraisons partielles successives (bons de livraison numérotés).
+router.get('/:id/livraisons', lire, id, ctrl.livraisons);
+router.post('/:id/livraisons', traiter, id, idempotence(), validate(v.expeditionSchema), ctrl.expedier);
+router.post('/:id/livraisons/:livraisonId/document', traiter, livraison, recevoirFichier('justificatif'), idempotence(), ctrl.documentLivraison);
+router.get('/:id/livraisons/:livraisonId/bon-de-livraison.pdf', lire, rapportRateLimit, livraison, ctrl.pdfLivraison);
+router.post('/:id/solder-reliquat', traiter, id, validate(v.motifSchema), ctrl.solderReliquat);
 router.post('/:id/annuler', traiter, id, validate(v.motifSchema), ctrl.annuler);
 router.post('/:id/commentaires', lire, id, validate(v.commentaireSchema), ctrl.commenter);
 router.post('/:id/pieces-jointes', requirePermission(P.DOCUMENTS_ECRIRE), id, recevoirFichier('document'), validate(v.pieceJointeSchema), idempotence(), ctrl.joindre);

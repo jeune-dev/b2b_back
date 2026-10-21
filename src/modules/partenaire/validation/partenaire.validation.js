@@ -27,6 +27,10 @@ const modificationSchema = Joi.object({
   notes: Joi.string().trim().max(5000).allow('', null),
   payment_terms_days: Joi.number().integer().min(0).max(365),
   supplier_customer_code: Joi.string().trim().max(40).allow('', null),
+  // Conditions du fournisseur : tarif du client, plafond de crédit, blocage en cas de retard.
+  price_list_id: uuid.allow(null),
+  credit_limit: Joi.number().integer().min(0).max(1e13).allow(null),
+  block_on_overdue: Joi.boolean(),
 }).min(1);
 
 const motifSchema = Joi.object({ reason: Joi.string().trim().min(3).max(1000).required() });

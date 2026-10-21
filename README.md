@@ -13,7 +13,7 @@ sécurité, supervision, déploiement).
 
 | Document | Contenu |
 |---|---|
-| [docs/ANALYSE_CAHIER_DES_CHARGES.md](docs/ANALYSE_CAHIER_DES_CHARGES.md) | Traçabilité cahier des charges → modules, tables, routes, rôles |
+| [docs/ANALYSE_CAHIER_DES_CHARGES.md](docs/ANALYSE_CAHIER_DES_CHARGES.md) | Traçabilité cahier des charges → modules, tables, routes, rôles ; fonctionnalités complémentaires (§ 6) |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Règles d'écriture du code (accès multi-entreprise, transactions, audit, tests) |
 | [docs/API.md](docs/API.md) | Référence des 172 routes, générée depuis le code |
 | [docs/CONTRAT-API-ENTREPRISE.md](docs/CONTRAT-API-ENTREPRISE.md) | Contrat détaillé pour les applications web et mobile (exemples réels) |
@@ -61,8 +61,9 @@ scripts/         référence des routes, contrats d'API, couverture des routes, 
 ```
 
 Modules : `auth`, `compte`, `entreprise`, `utilisateur`, `partenaire`,
-`catalogue`, `commande` (`/achats` et `/ventes`), `modele`, `facture`,
-`paiement`, `situation`, `dashboard`, `statistiques`, `document`,
+`catalogue` (produits, listes de prix, stock, import CSV), `commande`
+(`/achats` et `/ventes`, approbation, livraisons), `listeAchat`, `litige`,
+`avoir`, `modele`, `facture` (rapprochement, relances), `paiement`, `situation`, `dashboard`, `statistiques`, `document`,
 `notification`, `evenements`, `abonnement`, `parametres`, `referentiel`,
 `audit`, `admin`, `webhook`.
 
@@ -70,7 +71,7 @@ Modules : `auth`, `compte`, `entreprise`, `utilisateur`, `partenaire`,
 
 ```
 brouillon → envoyee → en_attente_validation ⇄ proposition_modifiee → validee
-  → en_preparation → prete → livree → reception_confirmee → facturee → terminee
+  → en_preparation → prete → [livree_partiellement →] livree → reception_confirmee → facturee → terminee
                                          (refusee / annulee selon l'étape)
 ```
 
@@ -78,6 +79,23 @@ Chaque proposition du fournisseur est une **version** (lignes, écarts,
 commentaires) ; chaque action est inscrite dans l'**historique** visible des
 deux parties ; les deux applications sont tenues à jour en temps réel (SSE +
 push).
+
+### Fonctionnalités d'achat et de vente avancées
+
+Au-delà du cahier des charges (détail : [§ 6 de l'analyse](docs/ANALYSE_CAHIER_DES_CHARGES.md)) :
+
+- **Achats** : recommander en un clic, listes d'achat habituelles avec stock
+  cible, saisie par référence et import CSV d'un bon de commande, circuit
+  d'approbation interne par seuils de montant, plafond de crédit.
+- **Livraison** : livraisons partielles numérotées, réception livraison par
+  livraison, reliquat soldé, bon de livraison PDF, retours et litiges avec
+  avoir automatique.
+- **Catalogue** : tarifs par client ou groupe de clients, remises par paliers,
+  minimum / multiple / maximum de commande, montant minimum, import / export
+  CSV, stock réservé à la validation avec alertes de stock bas.
+- **Finance** : rapprochement commande / réception / facture avec blocage du
+  paiement en cas d'écart, avoirs, relances graduées des impayés, export
+  comptable SYSCOHADA (journaux des ventes, achats et trésorerie).
 
 ## 3. Configuration
 
@@ -205,7 +223,7 @@ workers) après `npm ci --omit=dev && npm run migrate && npm run seed && npm run
 
 | Tâche | Quand | Rôle |
 |---|---|---|
-| echeances_factures | 08:00 | rappels avant échéance (J-n paramétrable), factures en retard (§ 17) |
+| echeances_factures | 08:00 | rappels avant échéance (J-n paramétrable), factures en retard, relances graduées J+3 / J+7 / J+15 (§ 17) |
 | abonnements | 01:00 | essais / abonnements échus → lecture seule (§ 25) |
 | nettoyage | 03:30 | jetons, clés d'idempotence, codes, invitations et notifications échus |
 

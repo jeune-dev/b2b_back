@@ -48,9 +48,13 @@ router.use('/partenariats', espaceEntreprise, m('partenaire/route/partenaire.rou
 router.use('/produits', espaceEntreprise, m('catalogue/route/produit.route.js'));
 router.use('/categories-produits', espaceEntreprise, m('catalogue/route/categorie.route.js'));
 router.use('/catalogues', espaceEntreprise, m('catalogue/route/catalogueFournisseur.route.js'));
+router.use('/listes-prix', espaceEntreprise, m('catalogue/route/listePrix.route.js'));
+router.use('/listes-achat', espaceEntreprise, m('listeAchat/route/listeAchat.route.js'));
 router.use('/achats', espaceEntreprise, m('commande/route/achat.route.js'));
 router.use('/ventes', espaceEntreprise, m('commande/route/vente.route.js'));
 router.use('/factures', espaceEntreprise, m('facture/route/facture.route.js'));
+router.use('/avoirs', espaceEntreprise, m('avoir/route/avoir.route.js'));
+router.use('/litiges', espaceEntreprise, m('litige/route/litige.route.js'));
 router.use('/paiements', espaceEntreprise, m('paiement/route/paiement.route.js'));
 router.use('/situation', espaceEntreprise, m('situation/route/situation.route.js'));
 router.use('/statistiques', espaceEntreprise, m('statistiques/route/statistiques.route.js'));

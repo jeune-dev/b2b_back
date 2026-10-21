@@ -81,7 +81,12 @@ async function modifierParametres(companyId, reglages) {
   return sequelize.transaction(async (t) => {
     const company = await Company.findByPk(companyId, { transaction: t, lock: t.LOCK.UPDATE });
     const avant = parametresEntreprise(company);
-    await company.update({ settings: { ...(company.settings || {}), ...reglages } }, { transaction: t });
+    const actuels = company.settings || {};
+    // Comptes comptables : surcharges fusionnées compte par compte.
+    const fusion = reglages.accounting_accounts
+      ? { ...reglages, accounting_accounts: { ...(actuels.accounting_accounts || {}), ...reglages.accounting_accounts } }
+      : reglages;
+    await company.update({ settings: { ...actuels, ...fusion } }, { transaction: t });
     await journaliser({ action: 'entreprise.modification_parametres', entityType: 'company', entityId: companyId, companyId, details: difference(avant, reglages, Object.keys(reglages)) }, t);
     return parametresEntreprise(company);
   });

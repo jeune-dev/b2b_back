@@ -19,6 +19,9 @@ const { decrire } = require('../utils/contrat.js');
  * - Plafond de taille PAR NATURE de fichier (image, document, vidéo).
  */
 
+/** Texte brut (CSV) : aucun octet nul dans les premiers kilo-octets. */
+const estTexte = (buffer) => buffer.length > 0 && !buffer.subarray(0, 8192).includes(0);
+
 /** @returns {'jpg'|'png'|'webp'|'pdf'|'mp4'|'mov'|'webm'|null} */
 function detecterType(buffer) {
   if (!buffer || buffer.length < 12) return null;
@@ -36,10 +39,23 @@ function detecterType(buffer) {
   return null;
 }
 
+/**
+ * Type d'un fichier pour une famille : un CSV n'a pas de signature binaire —
+ * il est reconnu comme texte SANS signature connue, et seulement là où un
+ * CSV est attendu (il est alors lu, jamais stocké ni servi).
+ */
+function typePourFamille(buffer, famille) {
+  const type = detecterType(buffer);
+  if (famille === 'tableur' && !type && buffer && estTexte(buffer)) return 'csv';
+  return type;
+}
+
 const MIME = {
   jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf',
-  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', csv: 'text/csv',
 };
+/** Import CSV (bon de commande, catalogue) : 2 Mo suffisent à 5 000 lignes. */
+const MAX_CSV_OCTETS = 2 * 1024 * 1024;
 const IMAGES = new Set(['jpg', 'png', 'webp']);
 const VIDEOS = new Set(['mp4', 'mov', 'webm']);
 
@@ -49,10 +65,12 @@ const FAMILLES = Object.freeze({
   justificatif: { types: new Set([...IMAGES, 'pdf']), libelle: 'une image (JPEG, PNG, WebP) ou un PDF' },
   media: { types: new Set([...IMAGES, ...VIDEOS]), libelle: 'une photo ou une vidéo (MP4, MOV, WebM)' },
   document: { types: new Set([...IMAGES, 'pdf']), libelle: 'un PDF ou une image' },
+  tableur: { types: new Set(['csv']), libelle: 'un fichier CSV (séparateur ; ou ,) exporté d’Excel ou de LibreOffice' },
 });
 
 const plafond = (type) => {
   if (VIDEOS.has(type)) return uploadConfig.maxVideoBytes;
+  if (type === 'csv') return MAX_CSV_OCTETS;
   if (type === 'pdf') return uploadConfig.maxDocumentBytes;
   return uploadConfig.maxImageBytes;
 };
@@ -111,7 +129,7 @@ function reserverMemoire(req, res, transportMax) {
  * Renvoie une CHAÎNE de middlewares (Express l'aplatit) : limite de débit par
  * utilisateur, réservation mémoire, puis lecture et contrôle du fichier.
  *
- * @param {'image'|'justificatif'|'media'|'document'} famille
+ * @param {'image'|'justificatif'|'media'|'document'|'tableur'} famille
  * @param {{ obligatoire?: boolean, champ?: string }} [options]
  */
 function recevoirFichier(famille, { obligatoire = true, champ = 'fichier' } = {}) {
@@ -145,7 +163,7 @@ function recevoirFichier(famille, { obligatoire = true, champ = 'fichier' } = {}
     if (!req.file) {
       return obligatoire ? next(new BadRequestError(`Fichier manquant : ${regle.libelle} est attendu(e) dans le champ « ${champ} ».`, 'FICHIER_MANQUANT')) : next();
     }
-    const type = detecterType(req.file.buffer);
+    const type = typePourFamille(req.file.buffer, famille);
     if (!type || !regle.types.has(type)) {
       return next(new BadRequestError(`Format refusé : ${regle.libelle} est attendu(e).`, 'FORMAT_FICHIER_REFUSE'));
     }

@@ -8,6 +8,7 @@ const { formatFcfa } = require('../../../utils/montants.js');
 const cache = require('../../../utils/cache.js');
 const logger = require('../../../utils/logger.js');
 const { notifierEntreprise } = require('../../notification/service/notification.service.js');
+const relances = require('./relance.service.js');
 
 /**
  * Échéances des factures (§ 17 « échéance ou montant dû », tâche quotidienne).
@@ -17,6 +18,7 @@ const { notifierEntreprise } = require('../../notification/service/notification.
  *   2. RETARD : une facture non soldée dont l'échéance est passée devient
  *      « en retard » ; l'acheteur et le fournisseur sont prévenus — une fois.
  *
+ *   3. RELANCES graduées des factures échues (relance.service.js).
  * Chaque passage est idempotent (horodatages `due_soon_notified_at`,
  * `overdue_notified_at`) : relancer la tâche ne renvoie aucun doublon.
  */
@@ -90,7 +92,11 @@ async function marquerEnRetard(jour = aujourdhui()) {
 }
 
 async function traiterEcheances() {
-  return { rappels: await rappelsAvantEcheance(), en_retard: await marquerEnRetard() };
+  return {
+    rappels: await rappelsAvantEcheance(),
+    en_retard: await marquerEnRetard(),
+    relances: await relances.relancesAutomatiques(),
+  };
 }
 
 module.exports = { rappelsAvantEcheance, marquerEnRetard, traiterEcheances };

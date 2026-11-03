@@ -2,7 +2,7 @@
 
 const asyncHandler = require('../../../middlewares/asyncHandler.js');
 const { ok, created } = require('../../../utils/response.js');
-const { cookieRefresh } = require('../../../config/security.js');
+const { cookieRefresh, mfaAConfigurer } = require('../../../config/security.js');
 const { UnauthorizedError } = require('../../../errors/AppError.js');
 const AuthService = require('../service/auth.service.js');
 const sessions = require('../service/session.service.js');
@@ -37,7 +37,7 @@ function formatUtilisateur(user) {
     must_change_password: user.must_change_password,
     mfa_active: Boolean(user.totp_enabled_at),
     // Super admin sans double authentification : seule sa configuration est ouverte.
-    mfa_a_configurer: user.role_code === 'super_admin' && !user.totp_enabled_at,
+    mfa_a_configurer: mfaAConfigurer(user),
   };
 }
 

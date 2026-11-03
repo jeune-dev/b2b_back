@@ -2,7 +2,7 @@
 
 const sequelize = require('../../../config/db.js');
 const { User, DeviceToken, Company } = require('../../../models/index.js');
-const { bcryptConfig, validerMotDePasseAdmin } = require('../../../config/security.js');
+const { bcryptConfig, validerMotDePasseAdmin, mfaAConfigurer } = require('../../../config/security.js');
 const { ROLES_ENTREPRISE } = require('../../../config/enums.js');
 const bcrypt = require('../../../utils/motDePasse.js');
 const {
@@ -19,7 +19,7 @@ const droits = require('../../abonnement/service/droits.service.js');
  */
 async function profil(user, req) {
   const complet = await User.findByPk(user.id);
-  const resultat = { user: complet.toJSON() };
+  const resultat = { user: { ...complet.toJSON(), mfa_a_configurer: mfaAConfigurer(complet) } };
   if (req.companyId) {
     resultat.company = await Company.findByPk(req.companyId, {
       attributes: ['id', 'name', 'type', 'sector', 'city', 'country', 'currency', 'status', 'logo_document_id', 'vat_registered', 'default_tax_rate'],

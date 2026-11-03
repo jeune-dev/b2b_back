@@ -1,7 +1,7 @@
 'use strict';
 
 const jwt = require('jsonwebtoken');
-const { jwtConfig, cleHmac } = require('../config/security.js');
+const { jwtConfig, cleHmac, mfaAConfigurer } = require('../config/security.js');
 const { User, CompanyMember, Company } = require('../models/index.js');
 const { UnauthorizedError, ForbiddenError } = require('../errors/AppError.js');
 const { permissionsDuRole } = require('../modules/auth/service/roles.service.js');
@@ -123,8 +123,8 @@ const auth = async (req, res, next) => {
       ));
     }
 
-    // Double authentification OBLIGATOIRE pour le super admin.
-    if (utilisateur.role_code === 'super_admin' && !utilisateur.totp_enabled_at && !routeOuverteAvantMfa(req)) {
+    // Double authentification OBLIGATOIRE pour le super admin (sauf ADMIN_MFA_OBLIGATOIRE=false en développement).
+    if (mfaAConfigurer(utilisateur) && !routeOuverteAvantMfa(req)) {
       return next(new ForbiddenError(
         'Configurez la double authentification avant d’accéder à l’administration.',
         'MFA_REQUISE'

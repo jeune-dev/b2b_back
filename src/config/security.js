@@ -196,8 +196,20 @@ const televersementRateLimitConfig = limite(15, env('UPLOAD_RATE_LIMIT_MAX', 60)
 // M12 : requêtes lourdes, jusqu'ici seulement bornées par la limite générale).
 const rapportRateLimitConfig = limite(15, env('RAPPORT_RATE_LIMIT_MAX', 60), 'Trop de rapports demandés. Réessayez dans quelques minutes.');
 
+// ── Double authentification du super admin ──────────────────────────────────
+// Obligatoire par défaut. ADMIN_MFA_OBLIGATOIRE=false la rend facultative,
+// en développement UNIQUEMENT (refusé en production).
+const mfaAdminObligatoire = String(process.env.ADMIN_MFA_OBLIGATOIRE ?? 'true').toLowerCase() !== 'false';
+if (!mfaAdminObligatoire && isProd) {
+  throw new Error('ADMIN_MFA_OBLIGATOIRE=false est interdit en production : la double authentification du super admin est obligatoire.');
+}
+/** Le super admin doit-il encore configurer sa double authentification ? */
+const mfaAConfigurer = (user) => mfaAdminObligatoire && user.role_code === 'super_admin' && !user.totp_enabled_at;
+
 module.exports = {
   isProd,
+  mfaAdminObligatoire,
+  mfaAConfigurer,
   jwtConfig,
   cleHmac,
   bcryptConfig,

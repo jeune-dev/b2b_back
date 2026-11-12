@@ -28,9 +28,16 @@ RUN npm ci --omit=dev --no-fund --ignore-scripts \
 # ── Étape 2 : image finale ───────────────────────────────────────────────────
 FROM node:22.20.0-slim AS runner
 # Polices pour les PDF (pdfkit). Pas de curl : le HEALTHCHECK utilise fetch de Node.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+#
+# `upgrade` avant l'installation : le job `image` de la CI fait échouer la
+# construction sur toute CVE système CORRIGEABLE (Trivy, ignore-unfixed). Or
+# l'image de base est épinglée : entre deux relèvements, un correctif Debian
+# publié suffit à mettre le pipeline au rouge sans qu'une ligne du projet ait
+# bougé (même choix que gestion_immo_back).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
         fonts-dejavu-core ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 # Gestionnaires de paquets inutiles à l'exécution (l'entrypoint appelle
 # node_modules/.bin directement) : moins de surface d'attaque et moins de CVE
 # remontées par Trivy (dépendances embarquées de npm).
